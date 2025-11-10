@@ -14,7 +14,6 @@ A healthcare application designed to help users manage their medication schedule
 
 ### Requirements
 - Python 3.9+
-- [Any other dependencies]
 
 ### Setup
 ```bash
