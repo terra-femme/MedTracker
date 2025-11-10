@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>MedTracker - Medication Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            overflow-x: hidden;
+            max-width: 428px;
+            margin: 0 auto;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 300;
+            color: #333;
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Navigation Drawer */
+        .nav-drawer {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.3);
+            transition: left 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .nav-drawer.open {
+            left: 0;
+        }
+
+        .nav-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+        }
+
+        .nav-header h2 {
+            font-size: 24px;
+            font-weight: 300;
+        }
+
+        .close-btn-nav {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .nav-section {
+            padding: 20px 0;
+        }
+
+        .nav-section-title {
+            padding: 0 20px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover {
+            background: #f5f5f5;
+        }
+
+        .nav-item-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            color: #4CAF50;
+        }
+
+        .nav-label {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .nav-arrow {
+            color: #ccc;
+            font-size: 18px;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 999;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 20px 16px;
+            padding-bottom: 160px;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .section-header {
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Today's Schedule Section */
+        .schedule-item {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #4CAF50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .schedule-time {
+            font-size: 16px;
+            font-weight: 600;
+            color: #4CAF50;
+            margin-bottom: 4px;
+        }
+
+        .schedule-med {
+            font-size: 18px;
+            color: #333;
+        }
+
+        .log-btn {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .log-btn:active {
+            background: #388E3C;
+        }
+
+        .log-btn.logged {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
+
+        /* Section Separator */
+        .section-separator {
+            margin: 32px 0 24px;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-separator::before,
+        .section-separator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 35%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #ccc);
+        }
+
+        .section-separator::before {
+            left: 0;
+        }
+
+        .section-separator::after {
+            right: 0;
+            background: linear-gradient(to left, transparent, #ccc);
+        }
+
+        .separator-text {
+            display: inline-block;
+            padding: 0 16px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Medication Card */
+        .med-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #4CAF50;
+        }
+
+        .med-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .med-dosage {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .med-frequency {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 12px;
+        }
+
+        .med-btn {
+            padding: 10px 20px;
+            background: #E8F5E9;
+            color: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Floating Action Buttons */
+        .fab-container {
+            position: fixed;
+            bottom: 24px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 90;
+            max-width: 428px;
+            margin: 0 auto;
+        }
+
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+            background: #E0E0E0;
+            font-size: 24px;
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        .fab-primary {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            font-size: 36px;
+            color: white;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #F5F5F5;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .radio-option:hover {
+            background: #EEEEEE;
+        }
+
+        .radio-option input {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .radio-option label {
+            font-size: 16px;
+            color: #333;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .cancel-btn {
+            width: 100%;
+            padding: 12px;
+            background: #F5F5F5;
+            color: #666;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <button class="menu-btn" onclick="toggleDrawer()">☰</button>
+        <div class="header-title">MedTracker</div>
+        <button class="menu-btn">⋮</button>
+    </div>
+
+    <!-- Navigation Drawer -->
+    <div class="nav-drawer" id="navDrawer">
+        <div class="nav-header">
+            <h2>💊 MedTracker</h2>
+            <button class="close-btn-nav" onclick="toggleDrawer()">✕</button>
+        </div>
+
+        <!-- Medications Section -->
+        <div class="nav-section">
+            <div class="nav-section-title">Medications</div>
+            <div class="nav-item" onclick="showActiveOnly()">
+                <div class="nav-item-content">
+                    <span class="nav-icon">✅</span>
+                    <span class="nav-label">Active Medications</span>
+                </div>
+                <span class="nav-arrow">›</span>
+            </div>
+            <div class="nav-item" onclick="showInactiveOnly()">
+                <div class="nav-item-content">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-label">Inactive/Past</span>
+                </div>
+                <span class="nav-arrow">›</span>
+            </div>
+            <div class="nav-item" onclick="showAllMedications()">
+                <div class="nav-item-content">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-label">All Medications</span>
+                </div>
+                <span class="nav-arrow">›</span>
+            </div>
+        </div>
+
+        <!-- Tracking Section -->
+        <div class="nav-section" style="border-top: 1px solid #e0e0e0;">
+            <div class="nav-section-title">Tracking</div>
+            <div class="nav-item" onclick="showLogs()">
+                <div class="nav-item-content">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Medication Logs</span>
+                </div>
+                <span class="nav-arrow">›</span>
+            </div>
+            <div class="nav-item" onclick="showAdherence()">
+                <div class="nav-item-content">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-label">Adherence Stats</span>
+                </div>
+                <span class="nav-arrow">›</span>
+            </div>
+            <div class="nav-item" onclick="showReminders()">
+                <div class="nav-item-content">
+                    <span class="nav-icon">⏰</span>
+                    <span class="nav-label">Reminders</span>
+                </div>
+                <span class="nav-arrow">›</span>
+            </div>
+        </div>
+
+        <!-- Tools Section -->
+        <div class="nav-section" style="border-top: 1px solid #e0e0e0;">
+            <div class="nav-section-title">Tools</div>
+            <div class="nav-item" onclick="showSettings()">
+                <div class="nav-item-content">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Settings</span>
+                </div>
+                <span class="nav-arrow">›</span>
+            </div>
+            <div class="nav-item" onclick="exportData()">
+                <div class="nav-item-content">
+                    <span class="nav-icon">📤</span>
+                    <span class="nav-label">Export Data</span>
+                </div>
+                <span class="nav-arrow">›</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleDrawer()"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Stats -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" id="activeMedsCount">-</div>
+                <div class="stat-label">Active Medications</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="takenTodayCount">-</div>
+                <div class="stat-label">Taken Today</div>
+            </div>
+        </div>
+
+        <!-- Today's Schedule Section -->
+        <div class="section-header">
+            <span>📅 Today's Schedule</span>
+            <span style="font-size: 14px; color: #4CAF50; cursor: pointer;" onclick="loadMedications()">Refresh</span>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading">
+            <div class="spinner"></div>
+            <p>Loading your schedule...</p>
+        </div>
+
+        <!-- Schedule Container -->
+        <div id="scheduleContainer" style="display: none;"></div>
+
+        <!-- Empty Schedule State -->
+        <div id="emptySchedule" class="empty-state" style="display: none;">
+            <h3>No scheduled medications today</h3>
+            <p style="margin-top: 12px;">Add medications with specific frequencies to see your schedule</p>
+        </div>
+
+        <!-- Section Separator -->
+        <div class="section-separator" id="separator" style="display: none;">
+            <span class="separator-text">Current Prescriptions</span>
+        </div>
+
+        <!-- Medications List -->
+        <div id="medicationsContainer" style="display: none;"></div>
+
+        <!-- Empty Medications State -->
+        <div id="emptyMedications" class="empty-state" style="display: none;">
+            <h3>No medications yet</h3>
+            <p style="margin-top: 12px;">Tap the + button below to add your first medication</p>
+        </div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="fab-container">
+        <button class="fab">📅</button>
+        <button class="fab fab-primary" onclick="openAddMedicationModal()">+</button>
+        <button class="fab">👤</button>
+    </div>
+
+    <!-- Modal for Adding Medication -->
+    <div class="modal-overlay" id="addMedicationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>➕ Add New Medication</span>
+                <button class="close-btn" onclick="closeAddMedicationModal()">✕</button>
+            </div>
+
+            <form id="medicationForm" onsubmit="addMedicationFromForm(event)">
+                <!-- Medication Name -->
+                <div class="form-group">
+                    <label class="form-label">Medication Name</label>
+                    <input 
+                        type="text" 
+                        id="medName" 
+                        class="form-input"
+                        placeholder="e.g., Aspirin, Lisinopril, Metformin"
+                        required
+                    />
+                </div>
+
+                <!-- Dosage -->
+                <div class="form-group">
+                    <label class="form-label">Dosage</label>
+                    <input 
+                        type="text" 
+                        id="medDosage" 
+                        class="form-input"
+                        placeholder="e.g., 500mg, 2 tablets, 1000 IU"
+                        required
+                    />
+                    <div class="form-hint">Example: 500mg, 2 tablets, 1000 IU</div>
+                </div>
+
+                <!-- Frequency -->
+                <div class="form-group">
+                    <label class="form-label">Frequency</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="freq1" name="frequency" value="Once daily" checked>
+                            <label for="freq1">Once daily</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="freq2" name="frequency" value="Twice daily">
+                            <label for="freq2">Twice daily</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="freq3" name="frequency" value="Three times daily">
+                            <label for="freq3">Three times daily</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="freq4" name="frequency" value="Every morning">
+                            <label for="freq4">Every morning</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="freq5" name="frequency" value="Every night">
+                            <label for="freq5">Every night</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="freq6" name="frequency" value="As needed">
+                            <label for="freq6">As needed</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group">
+                    <label class="form-label">Notes (optional)</label>
+                    <input 
+                        type="text" 
+                        id="medNotes" 
+                        class="form-input"
+                        placeholder="e.g., Take with food, before bed"
+                    />
+                </div>
+
+                <!-- Buttons -->
+                <button type="submit" class="submit-btn">➕ Add Medication</button>
+                <button type="button" class="cancel-btn" onclick="closeAddMedicationModal()">Cancel</button>
+            </form>
+
+            <!-- Result Message -->
+            <div id="formResult" style="margin-top: 16px; display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let allMedications = [];
+
+        // Navigation Drawer Functions
+        function toggleDrawer() {
+            const drawer = document.getElementById('navDrawer');
+            const overlay = document.getElementById('overlay');
+            drawer.classList.toggle('open');
+            overlay.classList.toggle('show');
+        }
+
+        function showActiveOnly() {
+            // Filter to show only active medications
+            const activeMeds = allMedications.filter(m => m.is_active);
+            displaySchedule(activeMeds);
+            displayMedications(activeMeds);
+            toggleDrawer();
+        }
+
+        function showInactiveOnly() {
+            // Show only inactive medications
+            const inactiveMeds = allMedications.filter(m => !m.is_active);
+            document.getElementById('scheduleContainer').style.display = 'none';
+            document.getElementById('separator').style.display = 'block';
+            displayMedications(inactiveMeds);
+            toggleDrawer();
+        }
+
+        function showAllMedications() {
+            // Show all medications
+            displaySchedule(allMedications);
+            displayMedications(allMedications);
+            toggleDrawer();
+        }
+
+        function showLogs() {
+            alert('Medication Logs - View all dose logs with dates and times');
+            toggleDrawer();
+        }
+
+        function showAdherence() {
+            alert('Adherence Statistics - View your medication adherence trends');
+            toggleDrawer();
+        }
+
+        function showReminders() {
+            alert('Reminders - Set up medication reminders');
+            toggleDrawer();
+        }
+
+        function showSettings() {
+            alert('Settings - App preferences and account settings');
+            toggleDrawer();
+        }
+
+        function exportData() {
+            alert('Export Data - Download your medication data as CSV or PDF');
+            toggleDrawer();
+        }
+
+        // Modal Functions
+        function openAddMedicationModal() {
+            document.getElementById('addMedicationModal').classList.add('active');
+        }
+
+        function closeAddMedicationModal() {
+            document.getElementById('addMedicationModal').classList.remove('active');
+            document.getElementById('medicationForm').reset();
+            document.getElementById('formResult').style.display = 'none';
+        }
+
+        // Smart Time Assignment based on Frequency
+        function getTimesForFrequency(frequency) {
+            const times = {
+                'Once daily': ['08:00'],
+                'Twice daily': ['08:00', '20:00'],
+                'Three times daily': ['08:00', '14:00', '20:00'],
+                'Every morning': ['08:00'],
+                'Every night': ['20:00'],
+                'As needed': [] // Don't show in schedule
+            };
+            return times[frequency] || [];
+        }
+
+        // Format time for display
+        function formatTime(time24) {
+            const [hours, minutes] = time24.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        // Load and display medications
+        async function loadMedications() {
+            try {
+                document.getElementById('loadingIndicator').style.display = 'block';
+                document.getElementById('scheduleContainer').style.display = 'none';
+                document.getElementById('medicationsContainer').style.display = 'none';
+                document.getElementById('emptySchedule').style.display = 'none';
+                document.getElementById('emptyMedications').style.display = 'none';
+                document.getElementById('separator').style.display = 'none';
+
+                const response = await fetch(`${API_BASE}/medications?active_only=false`);
+                const medications = await response.json();
+
+                allMedications = medications;
+                document.getElementById('loadingIndicator').style.display = 'none';
+
+                if (medications && medications.length > 0) {
+                    updateStats(medications);
+                    displaySchedule(medications);
+                    displayMedications(medications);
+                } else {
+                    document.getElementById('emptyMedications').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Failed to load medications:', error);
+                document.getElementById('loadingIndicator').innerHTML = 
+                    '<p style="color: #f44336;">⚠️ Could not connect to server<br>Make sure FastAPI is running on localhost:8000</p>';
+            }
+        }
+
+        function updateStats(medications) {
+            const active = medications.filter(m => m.is_active).length;
+            document.getElementById('activeMedsCount').textContent = active;
+            document.getElementById('takenTodayCount').textContent = '-';
+        }
+
+        // Display Today's Schedule
+        function displaySchedule(medications) {
+            const scheduleContainer = document.getElementById('scheduleContainer');
+            scheduleContainer.innerHTML = '';
+
+            const activeMeds = medications.filter(m => m.is_active);
+            
+            // Create schedule items
+            let scheduleItems = [];
+            activeMeds.forEach(med => {
+                const times = getTimesForFrequency(med.frequency);
+                times.forEach(time => {
+                    scheduleItems.push({
+                        time: time,
+                        medication: med
+                    });
+                });
+            });
+
+            // Sort by time
+            scheduleItems.sort((a, b) => a.time.localeCompare(b.time));
+
+            if (scheduleItems.length === 0) {
+                document.getElementById('emptySchedule').style.display = 'block';
+                return;
+            }
+
+            // Display schedule items
+            scheduleItems.forEach(item => {
+                const scheduleItem = document.createElement('div');
+                scheduleItem.className = 'schedule-item';
+                scheduleItem.innerHTML = `
+                    <div>
+                        <div class="schedule-time">${formatTime(item.time)}</div>
+                        <div class="schedule-med">${item.medication.name} - ${item.medication.dosage}</div>
+                    </div>
+                    <button class="log-btn" onclick="logDose(${item.medication.id}, '${item.medication.name}')">
+                        ✓ Log
+                    </button>
+                `;
+                scheduleContainer.appendChild(scheduleItem);
+            });
+
+            scheduleContainer.style.display = 'block';
+            document.getElementById('separator').style.display = 'block';
+        }
+
+        // Display Full Medication List
+        function displayMedications(medications) {
+            const container = document.getElementById('medicationsContainer');
+            container.innerHTML = '';
+
+            const activeMeds = medications.filter(m => m.is_active);
+
+            if (activeMeds.length === 0) {
+                return;
+            }
+
+            activeMeds.forEach(med => {
+                const card = document.createElement('div');
+                card.className = 'med-card';
+                card.innerHTML = `
+                    <div class="med-name">${med.name}</div>
+                    <div class="med-dosage">${med.dosage}</div>
+                    <div class="med-frequency">📅 ${med.frequency}</div>
+                    ${med.notes ? `<div style="font-size: 13px; color: #999; margin-bottom: 12px;">📝 ${med.notes}</div>` : ''}
+                    <button class="med-btn" onclick="viewMedicationDetails(${med.id})">View Details</button>
+                `;
+                container.appendChild(card);
+            });
+
+            container.style.display = 'block';
+        }
+
+        // Add medication from form
+        async function addMedicationFromForm(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('medName').value.trim();
+            const dosage = document.getElementById('medDosage').value.trim();
+            const notes = document.getElementById('medNotes').value.trim();
+            const frequency = document.querySelector('input[name="frequency"]:checked').value;
+            
+            const resultDiv = document.getElementById('formResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div style="color: #666; text-align: center;">💊 Adding medication...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/medications`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        dosage: dosage,
+                        frequency: frequency,
+                        start_date: new Date().toISOString(),
+                        is_active: true,
+                        notes: notes || null
+                    })
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div style="background: #E8F5E9; padding: 12px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                            <div style="font-weight: 600; color: #2E7D32;">✅ Medication Added!</div>
+                        </div>
+                    `;
+                    
+                    // Close modal and refresh after short delay
+                    setTimeout(() => {
+                        closeAddMedicationModal();
+                        loadMedications();
+                    }, 1500);
+                    
+                } else {
+                    const error = await response.json();
+                    resultDiv.innerHTML = `
+                        <div style="background: #FFEBEE; padding: 12px; border-radius: 8px; border-left: 4px solid #F44336;">
+                            <div style="font-weight: 600; color: #C62828;">❌ Error</div>
+                            <div style="font-size: 14px; color: #333;">${error.detail || 'Could not add medication'}</div>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <div style="background: #FFEBEE; padding: 12px; border-radius: 8px; border-left: 4px solid #F44336;">
+                        <div style="font-weight: 600; color: #C62828;">❌ Connection Error</div>
+                        <div style="font-size: 14px; color: #333;">Make sure FastAPI is running on localhost:8000</div>
+                    </div>
+                `;
+            }
+        }
+
+        async function logDose(medId, medName) {
+            if (confirm(`Log dose for ${medName}?`)) {
+                try {
+                    const response = await fetch(`${API_BASE}/logs/quick`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            medication_id: medId,
+                            was_taken: true,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('✅ Dose logged successfully!');
+                        loadMedications();
+                    } else {
+                        alert('❌ Failed to log dose');
+                    }
+                } catch (error) {
+                    console.error('Error logging dose:', error);
+                    alert('❌ Error: ' + error.message);
+                }
+            }
+        }
+
+        function viewMedicationDetails(medId) {
+            alert(`Opening detailed view for medication ID: ${medId}`);
+        }
+
+        // Load medications when page loads
+        window.addEventListener('load', loadMedications);
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+sqlalchemy==2.0.23
+pydantic==2.5.0
+
+Testing environment:
+python -m venv venv
+
+Activating venv:
+venv\Scripts\activate
+
+You will need to install Rust in powershell for pydantic (cd $HOME)
+Run in powershell:
+
+Invoke-WebRequest -Uri https://win.rustup.rs -UseBasicParsing -OutFile rustup-init.exe
+.\rustup-init.exe
