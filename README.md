@@ -1,3 +1,4 @@
+Note: This is a foundational scaffold for a medication reminder app. Core architecture is in place; features are being developed iteratively to reflect real-world healthcare IT workflows.
 # Medication Reminder App
 
 A healthcare application designed to help users manage their medication schedules with timely reminders and tracking.
