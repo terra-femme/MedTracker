@@ -140,7 +140,3 @@ Kristy aka Terra Femme — Aspiring Healthcare IT Engineer | Focused on modular 
 
 **Note**: This project is part of my portfolio demonstrating healthcare IT skills and FHIR integration knowledge.
 EOF
-
-git add README.md
-git commit -m "Add comprehensive README with installation and usage instructions"
-git push
