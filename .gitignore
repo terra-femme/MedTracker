@@ -1,2 +1,34 @@
 test.log
-test.log
+
+# Environment / secrets — NEVER commit these
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Database files (SQLite)
+*.db
+*.db-shm
+*.db-wal
+
+# Vector DB
+chroma_db/
+
+# OS / Windows artifacts
+$*
+Thumbs.db
+
+# Claude Code / AI tool directories
+.claude/
+.primer/
+
+# Audit logs and generated reports
+audit_log_*.json
+
+# Root-level init (not needed for a non-package project root)
+/__init__.py
