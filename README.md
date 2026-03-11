@@ -3,6 +3,8 @@
 # MedTracker
 A medication management application designed to help patients track medication schedules, set reminders, and maintain adherence records. Built with healthcare workflows and patient safety in mind.
 
+![MedTracker widget on iPhone showing 8am medication taken and 1pm pending](docs/medTracker_widget.jpeg)
+
 ## Problem Being Solved
 Medication non-adherence costs the US healthcare system $100-300B annually and leads to approximately 125,000 deaths per year. Patients struggle to manage complex medication schedules, especially those with multiple prescriptions or chronic conditions. MedTracker addresses this by providing an intuitive interface for medication tracking with timely reminders.
 
