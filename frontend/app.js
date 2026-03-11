@@ -3,6 +3,12 @@
  * Apple-like interface for FastAPI backend
  */
 
+// Disable browser scroll restoration so refresh always starts at the top
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+}
+window.scrollTo(0, 0);
+
 // ============================================
 // STATE MANAGEMENT
 // ============================================
