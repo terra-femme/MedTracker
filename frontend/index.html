@@ -2,1103 +2,631 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>MedTracker - Medication Manager</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-            overflow-x: hidden;
-            max-width: 428px;
-            margin: 0 auto;
-            height: 100vh;
-        }
-
-        /* Header */
-        .header {
-            background: white;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .menu-btn {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            padding: 8px;
-        }
-
-        .header-title {
-            font-size: 22px;
-            font-weight: 300;
-            color: #333;
-        }
-
-        .header-icons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .icon-btn {
-            background: none;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            padding: 8px;
-        }
-
-        /* Navigation Drawer */
-        .nav-drawer {
-            position: fixed;
-            top: 0;
-            left: -320px;
-            width: 320px;
-            height: 100vh;
-            background: white;
-            box-shadow: 2px 0 20px rgba(0,0,0,0.3);
-            transition: left 0.3s ease;
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .nav-drawer.open {
-            left: 0;
-        }
-
-        .nav-header {
-            padding: 20px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
-            color: white;
-        }
-
-        .nav-header h2 {
-            font-size: 24px;
-            font-weight: 300;
-        }
-
-        .close-btn-nav {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: white;
-        }
-
-        .nav-section {
-            padding: 20px 0;
-        }
-
-        .nav-section-title {
-            padding: 0 20px 10px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #999;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .nav-item {
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .nav-item:hover {
-            background: #f5f5f5;
-        }
-
-        .nav-item-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .nav-icon {
-            font-size: 20px;
-            color: #4CAF50;
-        }
-
-        .nav-label {
-            font-size: 16px;
-            color: #333;
-        }
-
-        .nav-arrow {
-            color: #ccc;
-            font-size: 18px;
-        }
-
-        /* Overlay */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            z-index: 999;
-        }
-
-        .overlay.show {
-            display: block;
-        }
-
-        /* Main Content */
-        .main-content {
-            padding: 20px 16px;
-            padding-bottom: 160px;
-        }
-
-        .stats-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #4CAF50;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        .section-header {
-            font-size: 18px;
-            color: #333;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Today's Schedule Section */
-        .schedule-item {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-left: 4px solid #4CAF50;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .schedule-time {
-            font-size: 16px;
-            font-weight: 600;
-            color: #4CAF50;
-            margin-bottom: 4px;
-        }
-
-        .schedule-med {
-            font-size: 18px;
-            color: #333;
-        }
-
-        .log-btn {
-            padding: 8px 16px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .log-btn:active {
-            background: #388E3C;
-        }
-
-        .log-btn.logged {
-            background: #E8F5E9;
-            color: #4CAF50;
-        }
-
-        /* Section Separator */
-        .section-separator {
-            margin: 32px 0 24px;
-            text-align: center;
-            position: relative;
-        }
-
-        .section-separator::before,
-        .section-separator::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 35%;
-            height: 2px;
-            background: linear-gradient(to right, transparent, #ccc);
-        }
-
-        .section-separator::before {
-            left: 0;
-        }
-
-        .section-separator::after {
-            right: 0;
-            background: linear-gradient(to left, transparent, #ccc);
-        }
-
-        .separator-text {
-            display: inline-block;
-            padding: 0 16px;
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-            color: #666;
-            font-size: 14px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Medication Card */
-        .med-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-left: 4px solid #4CAF50;
-        }
-
-        .med-name {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-        }
-
-        .med-dosage {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .med-frequency {
-            font-size: 14px;
-            color: #999;
-            margin-bottom: 12px;
-        }
-
-        .med-btn {
-            padding: 10px 20px;
-            background: #E8F5E9;
-            color: #4CAF50;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* Floating Action Buttons */
-        .fab-container {
-            position: fixed;
-            bottom: 24px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            z-index: 90;
-            max-width: 428px;
-            margin: 0 auto;
-        }
-
-        .fab {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
-            background: #E0E0E0;
-            font-size: 24px;
-        }
-
-        .fab:active {
-            transform: scale(0.95);
-        }
-
-        .fab-primary {
-            width: 72px;
-            height: 72px;
-            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
-            font-size: 36px;
-            color: white;
-        }
-
-        /* Modal Overlay */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 400px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .modal-header {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #E0E0E0;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #4CAF50;
-        }
-
-        .form-hint {
-            font-size: 12px;
-            color: #999;
-            margin-top: 4px;
-        }
-
-        .radio-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .radio-option {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            background: #F5F5F5;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .radio-option:hover {
-            background: #EEEEEE;
-        }
-
-        .radio-option input {
-            width: 20px;
-            height: 20px;
-            margin-right: 12px;
-            cursor: pointer;
-        }
-
-        .radio-option label {
-            font-size: 16px;
-            color: #333;
-            cursor: pointer;
-            flex: 1;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-
-        .submit-btn:active {
-            transform: scale(0.98);
-        }
-
-        .cancel-btn {
-            width: 100%;
-            padding: 12px;
-            background: #F5F5F5;
-            color: #666;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 12px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4CAF50;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <title>MedTracker</title>
+    
+    <!-- SF Pro Fonts (Apple System Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <button class="menu-btn" onclick="toggleDrawer()">☰</button>
-        <div class="header-title">MedTracker</div>
-        <button class="menu-btn">⋮</button>
+    <!-- Mesh Gradient Background -->
+    <div class="mesh-gradient-bg">
+        <div class="gradient-blob blob-1"></div>
+        <div class="gradient-blob blob-2"></div>
+        <div class="gradient-blob blob-3"></div>
     </div>
-
-    <!-- Navigation Drawer -->
-    <div class="nav-drawer" id="navDrawer">
-        <div class="nav-header">
-            <h2>💊 MedTracker</h2>
-            <button class="close-btn-nav" onclick="toggleDrawer()">✕</button>
-        </div>
-
-        <!-- Medications Section -->
-        <div class="nav-section">
-            <div class="nav-section-title">Medications</div>
-            <div class="nav-item" onclick="showActiveOnly()">
-                <div class="nav-item-content">
-                    <span class="nav-icon">✅</span>
-                    <span class="nav-label">Active Medications</span>
-                </div>
-                <span class="nav-arrow">›</span>
-            </div>
-            <div class="nav-item" onclick="showInactiveOnly()">
-                <div class="nav-item-content">
-                    <span class="nav-icon">📦</span>
-                    <span class="nav-label">Inactive/Past</span>
-                </div>
-                <span class="nav-arrow">›</span>
-            </div>
-            <div class="nav-item" onclick="showAllMedications()">
-                <div class="nav-item-content">
-                    <span class="nav-icon">📋</span>
-                    <span class="nav-label">All Medications</span>
-                </div>
-                <span class="nav-arrow">›</span>
-            </div>
-        </div>
-
-        <!-- Tracking Section -->
-        <div class="nav-section" style="border-top: 1px solid #e0e0e0;">
-            <div class="nav-section-title">Tracking</div>
-            <div class="nav-item" onclick="showLogs()">
-                <div class="nav-item-content">
-                    <span class="nav-icon">📊</span>
-                    <span class="nav-label">Medication Logs</span>
-                </div>
-                <span class="nav-arrow">›</span>
-            </div>
-            <div class="nav-item" onclick="showAdherence()">
-                <div class="nav-item-content">
-                    <span class="nav-icon">📈</span>
-                    <span class="nav-label">Adherence Stats</span>
-                </div>
-                <span class="nav-arrow">›</span>
-            </div>
-            <div class="nav-item" onclick="showReminders()">
-                <div class="nav-item-content">
-                    <span class="nav-icon">⏰</span>
-                    <span class="nav-label">Reminders</span>
-                </div>
-                <span class="nav-arrow">›</span>
-            </div>
-        </div>
-
-        <!-- Tools Section -->
-        <div class="nav-section" style="border-top: 1px solid #e0e0e0;">
-            <div class="nav-section-title">Tools</div>
-            <div class="nav-item" onclick="showSettings()">
-                <div class="nav-item-content">
-                    <span class="nav-icon">⚙️</span>
-                    <span class="nav-label">Settings</span>
-                </div>
-                <span class="nav-arrow">›</span>
-            </div>
-            <div class="nav-item" onclick="exportData()">
-                <div class="nav-item-content">
-                    <span class="nav-icon">📤</span>
-                    <span class="nav-label">Export Data</span>
-                </div>
-                <span class="nav-arrow">›</span>
-            </div>
+    
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-time">9:41</div>
+        <div class="status-icons">
+            <span class="status-icon">📶</span>
+            <span class="status-icon">📡</span>
+            <span class="status-icon">🔋</span>
         </div>
     </div>
-
-    <!-- Overlay -->
-    <div class="overlay" id="overlay" onclick="toggleDrawer()"></div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Stats -->
-        <div class="stats-container">
-            <div class="stat-card">
-                <div class="stat-number" id="activeMedsCount">-</div>
-                <div class="stat-label">Active Medications</div>
+    
+    <!-- Main App Container -->
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="ios-header">
+            <button class="header-btn" id="backBtn" style="display: none;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </button>
+            <h1 class="header-title">MedTracker</h1>
+            <button class="header-btn" id="settingsBtn">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v10m4.22-14.22l-4.24 4.24m-4.24 4.24l4.24 4.24M23 12h-6m-6 0H1m20.07 4.93l-4.24-4.24m-4.24-4.24l-4.24 4.24"/>
+                </svg>
+            </button>
+        </header>
+        
+        <!-- Content Area -->
+        <main class="content-area">
+            
+            <!-- HOME VIEW -->
+            <div class="view active" id="homeView">
+                <!-- Welcome Card -->
+                <div class="glass-card welcome-card">
+                    <div class="welcome-content">
+                        <div class="mood-indicator">
+                            <svg class="mood-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10" fill="url(#smileyGradient)"/>
+                                <circle cx="9" cy="10" r="1.5" fill="#333"/>
+                                <circle cx="15" cy="10" r="1.5" fill="#333"/>
+                                <path d="M8 14c1.5 2 4.5 2 6 0" stroke="#333" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                                <defs>
+                                    <linearGradient id="smileyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#FFD93D"/>
+                                        <stop offset="100%" style="stop-color:#FF6B6B"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <div class="welcome-text">
+                            <p class="welcome-subtitle">Good Morning</p>
+                            <h2 class="welcome-title">Time for your meds</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="glass-card stat-card stat-card-today" onclick="showView('schedule')">
+                        <div class="stat-icon-bg">
+                            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                        </div>
+                        <div class="stat-number" id="todayCount">0</div>
+                        <div class="stat-label">Today's Doses</div>
+                    </div>
+                    <div class="glass-card stat-card stat-card-meds" onclick="showView('medications')">
+                        <div class="stat-icon-bg">
+                            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+                                <path d="m8.5 8.5 7 7"/>
+                            </svg>
+                        </div>
+                        <div class="stat-number" id="medCount">0</div>
+                        <div class="stat-label">Medications</div>
+                    </div>
+                    <div class="glass-card stat-card stat-card-streak" onclick="showView('stats')">
+                        <div class="stat-icon-bg">
+                            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-number" id="streakCount">0</div>
+                        <div class="stat-label">Day Streak</div>
+                    </div>
+                    <div class="glass-card stat-card stat-card-adherence" onclick="showView('stats')">
+                        <div class="stat-icon-bg">
+                            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                        </div>
+                        <div class="stat-number" id="adherenceRate">0%</div>
+                        <div class="stat-label">Adherence</div>
+                    </div>
+                </div>
+                
+                <!-- Up Next Section -->
+                <div class="section-header">
+                    <h3>Up Next</h3>
+                    <button class="text-btn" onclick="showView('schedule')">See All</button>
+                </div>
+                
+                <div class="up-next-container" id="upNextContainer">
+                    <div class="empty-state">
+                        <div class="empty-icon">💊</div>
+                        <p>No medications scheduled</p>
+                        <button class="ios-btn ios-btn-primary" onclick="openAddModal()">Add Medication</button>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number" id="takenTodayCount">-</div>
-                <div class="stat-label">Taken Today</div>
+            
+            <!-- SCHEDULE VIEW -->
+            <div class="view" id="scheduleView">
+                <div class="section-header">
+                    <h3>Today's Schedule</h3>
+                    <span class="date-label" id="currentDate"></span>
+                </div>
+                <div class="schedule-list" id="scheduleList">
+                    <!-- Dynamically populated -->
+                </div>
             </div>
-        </div>
-
-        <!-- Today's Schedule Section -->
-        <div class="section-header">
-            <span>📅 Today's Schedule</span>
-            <span style="font-size: 14px; color: #4CAF50; cursor: pointer;" onclick="loadMedications()">Refresh</span>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div id="loadingIndicator" class="loading">
-            <div class="spinner"></div>
-            <p>Loading your schedule...</p>
-        </div>
-
-        <!-- Schedule Container -->
-        <div id="scheduleContainer" style="display: none;"></div>
-
-        <!-- Empty Schedule State -->
-        <div id="emptySchedule" class="empty-state" style="display: none;">
-            <h3>No scheduled medications today</h3>
-            <p style="margin-top: 12px;">Add medications with specific frequencies to see your schedule</p>
-        </div>
-
-        <!-- Section Separator -->
-        <div class="section-separator" id="separator" style="display: none;">
-            <span class="separator-text">Current Prescriptions</span>
-        </div>
-
-        <!-- Medications List -->
-        <div id="medicationsContainer" style="display: none;"></div>
-
-        <!-- Empty Medications State -->
-        <div id="emptyMedications" class="empty-state" style="display: none;">
-            <h3>No medications yet</h3>
-            <p style="margin-top: 12px;">Tap the + button below to add your first medication</p>
-        </div>
+            
+            <!-- MEDICATIONS VIEW -->
+            <div class="view" id="medicationsView">
+                <div class="section-header">
+                    <h3>My Medications</h3>
+                    <button class="text-btn" onclick="openAddModal()">+ Add New</button>
+                </div>
+                <div class="medications-list" id="medicationsList">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+            
+            <!-- STATS VIEW -->
+            <div class="view" id="statsView">
+                <div class="section-header">
+                    <h3>Your Progress</h3>
+                </div>
+                
+                <!-- Adherence Circle -->
+                <div class="glass-card adherence-card">
+                    <div class="adherence-circle" id="adherenceCircle">
+                        <svg class="adherence-ring" viewBox="0 0 100 100">
+                            <circle class="adherence-track" cx="50" cy="50" r="42"/>
+                            <circle class="adherence-progress" cx="50" cy="50" r="42" id="adherenceProgress"/>
+                        </svg>
+                        <div class="adherence-value">
+                            <span class="adherence-percent" id="adherencePercent">0%</span>
+                            <span class="adherence-label">Adherence</span>
+                        </div>
+                    </div>
+                    <div class="adherence-grade" id="adherenceGrade">-</div>
+                </div>
+                
+                <!-- Weekly Chart -->
+                <div class="glass-card chart-card">
+                    <h4 class="card-title">Last 7 Days</h4>
+                    <div class="weekly-chart" id="weeklyChart">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                
+                <!-- Medication Stats -->
+                <div class="section-header">
+                    <h3>By Medication</h3>
+                </div>
+                <div class="med-stats-list" id="medStatsList">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+            
+            <!-- CHATBOT VIEW -->
+            <div class="view" id="chatbotView">
+                <div class="section-header">
+                    <h3>Med Assistant</h3>
+                    <button class="text-btn" onclick="initChatbot()">Initialize</button>
+                </div>
+                
+                <div class="glass-card chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-message bot-message">
+                            <div class="message-avatar">🤖</div>
+                            <div class="message-content">
+                                <p>Hello! I'm your medication assistant. Ask me anything about your medications!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Ask a question...">
+                        <button class="chat-send-btn" onclick="sendChatMessage()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+        </main>
+        
+        <!-- Floating Action Button -->
+        <button class="fab" id="fabBtn" onclick="openAddModal()">
+            <svg class="fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        </button>
+        
+        <!-- Floating Tab Bar -->
+        <nav class="floating-tab-bar">
+            <button class="tab-btn active" data-tab="home" onclick="showView('home')">
+                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span class="tab-label">Home</span>
+            </button>
+            <button class="tab-btn" data-tab="schedule" onclick="showView('schedule')">
+                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span class="tab-label">Schedule</span>
+            </button>
+            <button class="tab-btn" data-tab="medications" onclick="showView('medications')">
+                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+                    <path d="m8.5 8.5 7 7"/>
+                </svg>
+                <span class="tab-label">Meds</span>
+            </button>
+            <button class="tab-btn" data-tab="stats" onclick="showView('stats')">
+                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                <span class="tab-label">Stats</span>
+            </button>
+            <button class="tab-btn" data-tab="chatbot" onclick="showView('chatbot')">
+                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                </svg>
+                <span class="tab-label">Chat</span>
+            </button>
+        </nav>
+        
     </div>
-
-    <!-- Floating Action Buttons -->
-    <div class="fab-container">
-        <button class="fab">📅</button>
-        <button class="fab fab-primary" onclick="openAddMedicationModal()">+</button>
-        <button class="fab">👤</button>
-    </div>
-
-    <!-- Modal for Adding Medication -->
-    <div class="modal-overlay" id="addMedicationModal">
-        <div class="modal-content">
+    
+    <!-- Add Medication Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-overlay" onclick="closeAddModal()"></div>
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
             <div class="modal-header">
-                <span>➕ Add New Medication</span>
-                <button class="close-btn" onclick="closeAddMedicationModal()">✕</button>
+                <h2>Add Medication</h2>
+                <button class="close-btn" onclick="closeAddModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
             </div>
-
-            <form id="medicationForm" onsubmit="addMedicationFromForm(event)">
-                <!-- Medication Name -->
-                <div class="form-group">
-                    <label class="form-label">Medication Name</label>
-                    <input 
-                        type="text" 
-                        id="medName" 
-                        class="form-input"
-                        placeholder="e.g., Aspirin, Lisinopril, Metformin"
-                        required
-                    />
-                </div>
-
-                <!-- Dosage -->
-                <div class="form-group">
-                    <label class="form-label">Dosage</label>
-                    <input 
-                        type="text" 
-                        id="medDosage" 
-                        class="form-input"
-                        placeholder="e.g., 500mg, 2 tablets, 1000 IU"
-                        required
-                    />
-                    <div class="form-hint">Example: 500mg, 2 tablets, 1000 IU</div>
-                </div>
-
-                <!-- Frequency -->
-                <div class="form-group">
-                    <label class="form-label">Frequency</label>
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="freq1" name="frequency" value="Once daily" checked>
-                            <label for="freq1">Once daily</label>
+            <div class="modal-content">
+                <form id="addMedForm" onsubmit="submitMedication(event)">
+                    <div class="form-group">
+                        <label class="form-label">Medication Name</label>
+                        <input type="text" class="form-input" id="medName" placeholder="e.g., Amoxicillin" required>
+                        <div class="autocomplete-list" id="autocompleteList"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Dosage</label>
+                        <input type="text" class="form-input" id="medDosage" placeholder="e.g., 500mg" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Frequency</label>
+                        <div class="segmented-control">
+                            <button type="button" class="segment-btn active" data-value="once_daily" data-count="1">Once Daily</button>
+                            <button type="button" class="segment-btn" data-value="twice_daily" data-count="2">Twice Daily</button>
+                            <button type="button" class="segment-btn" data-value="three_times_daily" data-count="3">3x Daily</button>
                         </div>
-                        <div class="radio-option">
-                            <input type="radio" id="freq2" name="frequency" value="Twice daily">
-                            <label for="freq2">Twice daily</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="freq3" name="frequency" value="Three times daily">
-                            <label for="freq3">Three times daily</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="freq4" name="frequency" value="Every morning">
-                            <label for="freq4">Every morning</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="freq5" name="frequency" value="Every night">
-                            <label for="freq5">Every night</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="freq6" name="frequency" value="As needed">
-                            <label for="freq6">As needed</label>
+                        <input type="hidden" id="medFrequency" value="once_daily">
+                    </div>
+                    
+                    <!-- Time Selection - Dynamic based on frequency -->
+                    <div class="form-group" id="timeSelectionGroup">
+                        <label class="form-label">Reminder Times</label>
+                        <div id="timeInputsContainer">
+                            <!-- Time inputs will be generated here -->
+                            <div class="time-input-row">
+                                <span class="time-label">Dose 1</span>
+                                <input type="time" class="time-input" id="timeDose1" value="08:00">
+                            </div>
                         </div>
                     </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea class="form-input" id="medNotes" rows="3" placeholder="Take with food, etc."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="ios-btn ios-btn-primary ios-btn-large">
+                        Add Medication
+                    </button>
+                </form>
+
+                <!-- Step 2: Pill Identification (shown after medication is saved) -->
+                <div id="pillStep" class="pill-step" style="display:none">
+                    <div class="pill-step-header">
+                        <h3>What does your pill look like?</h3>
+                        <p class="pill-step-subtitle">Helps you identify the right pill at a glance</p>
+                    </div>
+
+                    <div class="pill-preview-wrap">
+                        <div id="pillPreview" class="pill-preview pill-oval pill-color-white pill-size-medium"></div>
+                    </div>
+
+                    <div class="pill-selector-group">
+                        <label>Shape</label>
+                        <div class="pill-selector" id="shapeSelector">
+                            <button type="button" class="pill-opt selected" data-shape="oval">Oval</button>
+                            <button type="button" class="pill-opt" data-shape="round">Round</button>
+                            <button type="button" class="pill-opt" data-shape="capsule">Capsule</button>
+                            <button type="button" class="pill-opt" data-shape="rectangle">Rectangle</button>
+                            <button type="button" class="pill-opt" data-shape="diamond">Diamond</button>
+                        </div>
+                    </div>
+
+                    <div class="pill-selector-group">
+                        <label>Color</label>
+                        <div class="pill-color-grid" id="colorSelector">
+                            <button type="button" class="color-swatch selected" data-color="white"  style="background:#fff;border:2px solid #ccc" title="White"></button>
+                            <button type="button" class="color-swatch" data-color="yellow" style="background:#FFE066" title="Yellow"></button>
+                            <button type="button" class="color-swatch" data-color="pink"   style="background:#FFB3C6" title="Pink"></button>
+                            <button type="button" class="color-swatch" data-color="blue"   style="background:#74B9FF" title="Blue"></button>
+                            <button type="button" class="color-swatch" data-color="orange" style="background:#FFA07A" title="Orange"></button>
+                            <button type="button" class="color-swatch" data-color="red"    style="background:#FF6B6B" title="Red"></button>
+                            <button type="button" class="color-swatch" data-color="green"  style="background:#55EFC4" title="Green"></button>
+                            <button type="button" class="color-swatch" data-color="purple" style="background:#C39BD3" title="Purple"></button>
+                            <button type="button" class="color-swatch" data-color="brown"  style="background:#CD853F" title="Brown"></button>
+                            <button type="button" class="color-swatch" data-color="gray"   style="background:#B2BEC3" title="Gray"></button>
+                        </div>
+                    </div>
+
+                    <div class="pill-selector-group">
+                        <label>Size</label>
+                        <div class="pill-selector" id="sizeSelector">
+                            <button type="button" class="pill-opt" data-size="small">Small</button>
+                            <button type="button" class="pill-opt selected" data-size="medium">Medium</button>
+                            <button type="button" class="pill-opt" data-size="large">Large</button>
+                        </div>
+                    </div>
+
+                    <div class="pill-step-actions">
+                        <button type="button" class="ios-btn ios-btn-secondary" onclick="skipPillStep()">Skip</button>
+                        <button type="button" class="ios-btn ios-btn-primary"   onclick="savePillStep()">Save &amp; Done</button>
+                    </div>
                 </div>
-
-                <!-- Notes -->
-                <div class="form-group">
-                    <label class="form-label">Notes (optional)</label>
-                    <input 
-                        type="text" 
-                        id="medNotes" 
-                        class="form-input"
-                        placeholder="e.g., Take with food, before bed"
-                    />
-                </div>
-
-                <!-- Buttons -->
-                <button type="submit" class="submit-btn">➕ Add Medication</button>
-                <button type="button" class="cancel-btn" onclick="closeAddMedicationModal()">Cancel</button>
-            </form>
-
-            <!-- Result Message -->
-            <div id="formResult" style="margin-top: 16px; display: none;"></div>
+            </div>
         </div>
     </div>
 
-    <script>
-        const API_BASE = 'http://localhost:8000';
-        let allMedications = [];
-
-        // Navigation Drawer Functions
-        function toggleDrawer() {
-            const drawer = document.getElementById('navDrawer');
-            const overlay = document.getElementById('overlay');
-            drawer.classList.toggle('open');
-            overlay.classList.toggle('show');
-        }
-
-        function showActiveOnly() {
-            // Filter to show only active medications
-            const activeMeds = allMedications.filter(m => m.is_active);
-            displaySchedule(activeMeds);
-            displayMedications(activeMeds);
-            toggleDrawer();
-        }
-
-        function showInactiveOnly() {
-            // Show only inactive medications
-            const inactiveMeds = allMedications.filter(m => !m.is_active);
-            document.getElementById('scheduleContainer').style.display = 'none';
-            document.getElementById('separator').style.display = 'block';
-            displayMedications(inactiveMeds);
-            toggleDrawer();
-        }
-
-        function showAllMedications() {
-            // Show all medications
-            displaySchedule(allMedications);
-            displayMedications(allMedications);
-            toggleDrawer();
-        }
-
-        function showLogs() {
-            alert('Medication Logs - View all dose logs with dates and times');
-            toggleDrawer();
-        }
-
-        function showAdherence() {
-            alert('Adherence Statistics - View your medication adherence trends');
-            toggleDrawer();
-        }
-
-        function showReminders() {
-            alert('Reminders - Set up medication reminders');
-            toggleDrawer();
-        }
-
-        function showSettings() {
-            alert('Settings - App preferences and account settings');
-            toggleDrawer();
-        }
-
-        function exportData() {
-            alert('Export Data - Download your medication data as CSV or PDF');
-            toggleDrawer();
-        }
-
-        // Modal Functions
-        function openAddMedicationModal() {
-            document.getElementById('addMedicationModal').classList.add('active');
-        }
-
-        function closeAddMedicationModal() {
-            document.getElementById('addMedicationModal').classList.remove('active');
-            document.getElementById('medicationForm').reset();
-            document.getElementById('formResult').style.display = 'none';
-        }
-
-        // Smart Time Assignment based on Frequency
-        function getTimesForFrequency(frequency) {
-            const times = {
-                'Once daily': ['08:00'],
-                'Twice daily': ['08:00', '20:00'],
-                'Three times daily': ['08:00', '14:00', '20:00'],
-                'Every morning': ['08:00'],
-                'Every night': ['20:00'],
-                'As needed': [] // Don't show in schedule
-            };
-            return times[frequency] || [];
-        }
-
-        // Format time for display
-        function formatTime(time24) {
-            const [hours, minutes] = time24.split(':');
-            const hour = parseInt(hours);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const hour12 = hour % 12 || 12;
-            return `${hour12}:${minutes} ${ampm}`;
-        }
-
-        // Load and display medications
-        async function loadMedications() {
-            try {
-                document.getElementById('loadingIndicator').style.display = 'block';
-                document.getElementById('scheduleContainer').style.display = 'none';
-                document.getElementById('medicationsContainer').style.display = 'none';
-                document.getElementById('emptySchedule').style.display = 'none';
-                document.getElementById('emptyMedications').style.display = 'none';
-                document.getElementById('separator').style.display = 'none';
-
-                const response = await fetch(`${API_BASE}/medications?active_only=false`);
-                const medications = await response.json();
-
-                allMedications = medications;
-                document.getElementById('loadingIndicator').style.display = 'none';
-
-                if (medications && medications.length > 0) {
-                    updateStats(medications);
-                    displaySchedule(medications);
-                    displayMedications(medications);
-                } else {
-                    document.getElementById('emptyMedications').style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Failed to load medications:', error);
-                document.getElementById('loadingIndicator').innerHTML = 
-                    '<p style="color: #f44336;">⚠️ Could not connect to server<br>Make sure FastAPI is running on localhost:8000</p>';
-            }
-        }
-
-        function updateStats(medications) {
-            const active = medications.filter(m => m.is_active).length;
-            document.getElementById('activeMedsCount').textContent = active;
-            document.getElementById('takenTodayCount').textContent = '-';
-        }
-
-        // Display Today's Schedule
-        function displaySchedule(medications) {
-            const scheduleContainer = document.getElementById('scheduleContainer');
-            scheduleContainer.innerHTML = '';
-
-            const activeMeds = medications.filter(m => m.is_active);
-            
-            // Create schedule items
-            let scheduleItems = [];
-            activeMeds.forEach(med => {
-                const times = getTimesForFrequency(med.frequency);
-                times.forEach(time => {
-                    scheduleItems.push({
-                        time: time,
-                        medication: med
-                    });
-                });
-            });
-
-            // Sort by time
-            scheduleItems.sort((a, b) => a.time.localeCompare(b.time));
-
-            if (scheduleItems.length === 0) {
-                document.getElementById('emptySchedule').style.display = 'block';
-                return;
-            }
-
-            // Display schedule items
-            scheduleItems.forEach(item => {
-                const scheduleItem = document.createElement('div');
-                scheduleItem.className = 'schedule-item';
-                scheduleItem.innerHTML = `
-                    <div>
-                        <div class="schedule-time">${formatTime(item.time)}</div>
-                        <div class="schedule-med">${item.medication.name} - ${item.medication.dosage}</div>
+    <!-- Edit Medication Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-overlay" onclick="closeEditModal()"></div>
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <div class="modal-header">
+                <h2>Edit Medication</h2>
+                <button class="close-btn" onclick="closeEditModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-content">
+                <form id="editMedForm" onsubmit="submitEditMedication(event)">
+                    <input type="hidden" id="editMedId">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Medication Name</label>
+                        <input type="text" class="form-input" id="editMedName" required>
                     </div>
-                    <button class="log-btn" onclick="logDose(${item.medication.id}, '${item.medication.name}')">
-                        ✓ Log
+                    
+                    <div class="form-group">
+                        <label class="form-label">Dosage</label>
+                        <input type="text" class="form-input" id="editMedDosage" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Frequency</label>
+                        <div class="segmented-control" id="editFrequencyControl">
+                            <button type="button" class="segment-btn" data-value="once_daily" data-count="1">Once Daily</button>
+                            <button type="button" class="segment-btn" data-value="twice_daily" data-count="2">Twice Daily</button>
+                            <button type="button" class="segment-btn" data-value="three_times_daily" data-count="3">3x Daily</button>
+                        </div>
+                        <input type="hidden" id="editMedFrequency" value="once_daily">
+                    </div>
+                    
+                    <!-- Time Selection for Edit -->
+                    <div class="form-group" id="editTimeSelectionGroup">
+                        <label class="form-label">Reminder Times</label>
+                        <div id="editTimeInputsContainer">
+                            <!-- Time inputs will be generated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea class="form-input" id="editMedNotes" rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="ios-btn ios-btn-primary ios-btn-large">
+                        Save Changes
                     </button>
-                `;
-                scheduleContainer.appendChild(scheduleItem);
-            });
-
-            scheduleContainer.style.display = 'block';
-            document.getElementById('separator').style.display = 'block';
-        }
-
-        // Display Full Medication List
-        function displayMedications(medications) {
-            const container = document.getElementById('medicationsContainer');
-            container.innerHTML = '';
-
-            const activeMeds = medications.filter(m => m.is_active);
-
-            if (activeMeds.length === 0) {
-                return;
-            }
-
-            activeMeds.forEach(med => {
-                const card = document.createElement('div');
-                card.className = 'med-card';
-                card.innerHTML = `
-                    <div class="med-name">${med.name}</div>
-                    <div class="med-dosage">${med.dosage}</div>
-                    <div class="med-frequency">📅 ${med.frequency}</div>
-                    ${med.notes ? `<div style="font-size: 13px; color: #999; margin-bottom: 12px;">📝 ${med.notes}</div>` : ''}
-                    <button class="med-btn" onclick="viewMedicationDetails(${med.id})">View Details</button>
-                `;
-                container.appendChild(card);
-            });
-
-            container.style.display = 'block';
-        }
-
-        // Add medication from form
-        async function addMedicationFromForm(event) {
-            event.preventDefault();
-            
-            const name = document.getElementById('medName').value.trim();
-            const dosage = document.getElementById('medDosage').value.trim();
-            const notes = document.getElementById('medNotes').value.trim();
-            const frequency = document.querySelector('input[name="frequency"]:checked').value;
-            
-            const resultDiv = document.getElementById('formResult');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = '<div style="color: #666; text-align: center;">💊 Adding medication...</div>';
-            
-            try {
-                const response = await fetch(`${API_BASE}/medications`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        name: name,
-                        dosage: dosage,
-                        frequency: frequency,
-                        start_date: new Date().toISOString(),
-                        is_active: true,
-                        notes: notes || null
-                    })
-                });
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-overlay" onclick="closeSettingsModal()"></div>
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-btn" onclick="closeSettingsModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-content">
                 
-                if (response.ok) {
-                    resultDiv.innerHTML = `
-                        <div style="background: #E8F5E9; padding: 12px; border-radius: 8px; border-left: 4px solid #4CAF50;">
-                            <div style="font-weight: 600; color: #2E7D32;">✅ Medication Added!</div>
-                        </div>
-                    `;
-                    
-                    // Close modal and refresh after short delay
-                    setTimeout(() => {
-                        closeAddMedicationModal();
-                        loadMedications();
-                    }, 1500);
-                    
-                } else {
-                    const error = await response.json();
-                    resultDiv.innerHTML = `
-                        <div style="background: #FFEBEE; padding: 12px; border-radius: 8px; border-left: 4px solid #F44336;">
-                            <div style="font-weight: 600; color: #C62828;">❌ Error</div>
-                            <div style="font-size: 14px; color: #333;">${error.detail || 'Could not add medication'}</div>
-                        </div>
-                    `;
-                }
-                
-            } catch (error) {
-                console.error('Error:', error);
-                resultDiv.innerHTML = `
-                    <div style="background: #FFEBEE; padding: 12px; border-radius: 8px; border-left: 4px solid #F44336;">
-                        <div style="font-weight: 600; color: #C62828;">❌ Connection Error</div>
-                        <div style="font-size: 14px; color: #333;">Make sure FastAPI is running on localhost:8000</div>
+                <!-- Notifications Section -->
+                <div class="settings-section">
+                    <div class="settings-section-title">
+                        <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <span>Notifications</span>
                     </div>
-                `;
-            }
-        }
-
-        async function logDose(medId, medName) {
-            if (confirm(`Log dose for ${medName}?`)) {
-                try {
-                    const response = await fetch(`${API_BASE}/logs/quick`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            medication_id: medId,
-                            was_taken: true,
-                            timestamp: new Date().toISOString()
-                        })
-                    });
-
-                    if (response.ok) {
-                        alert('✅ Dose logged successfully!');
-                        loadMedications();
-                    } else {
-                        alert('❌ Failed to log dose');
-                    }
-                } catch (error) {
-                    console.error('Error logging dose:', error);
-                    alert('❌ Error: ' + error.message);
-                }
-            }
-        }
-
-        function viewMedicationDetails(medId) {
-            alert(`Opening detailed view for medication ID: ${medId}`);
-        }
-
-        // Load medications when page loads
-        window.addEventListener('load', loadMedications);
-    </script>
+                    
+                    <div class="settings-item">
+                        <div class="settings-item-info">
+                            <div class="settings-item-title">Daily Reminders</div>
+                            <div class="settings-item-subtitle">Get notified for medication doses</div>
+                        </div>
+                        <label class="ios-toggle">
+                            <input type="checkbox" id="reminderToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="settings-item">
+                        <div class="settings-item-info">
+                            <div class="settings-item-title">Refill Alerts</div>
+                            <div class="settings-item-subtitle">Alert when running low on medication</div>
+                        </div>
+                        <label class="ios-toggle">
+                            <input type="checkbox" id="refillToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="settings-item">
+                        <div class="settings-item-info">
+                            <div class="settings-item-title">Interaction Warnings</div>
+                            <div class="settings-item-subtitle">Alert about potential drug interactions</div>
+                        </div>
+                        <label class="ios-toggle">
+                            <input type="checkbox" id="interactionToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Appearance Section -->
+                <div class="settings-section">
+                    <div class="settings-section-title">
+                        <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <span>Appearance</span>
+                    </div>
+                    
+                    <div class="settings-item">
+                        <div class="settings-item-info">
+                            <div class="settings-item-title">Dark Mode</div>
+                            <div class="settings-item-subtitle">Switch to dark theme</div>
+                        </div>
+                        <label class="ios-toggle">
+                            <input type="checkbox" id="darkModeToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Data Section -->
+                <div class="settings-section">
+                    <div class="settings-section-title">
+                        <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                        </svg>
+                        <span>Data</span>
+                    </div>
+                    
+                    <button class="settings-action-btn" onclick="exportData()">
+                        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        <span>Export Medication Data</span>
+                    </button>
+                    
+                    <button class="settings-action-btn danger" onclick="clearAllData()">
+                        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        <span>Clear All Data</span>
+                    </button>
+                </div>
+                
+                <!-- Debug Section -->
+                <div class="settings-section">
+                    <div class="settings-section-title">
+                        <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        <span>Debug</span>
+                    </div>
+                    
+                    <button class="settings-action-btn" onclick="debugClearLogs()">
+                        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                        </svg>
+                        <span>Clear All Logs (Reset Taken Status)</span>
+                    </button>
+                    
+                    <button class="settings-action-btn" onclick="testAgents()">
+                        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                        </svg>
+                        <span>Test Agent System</span>
+                    </button>
+                </div>
+                
+                <!-- About Section -->
+                <div class="settings-section settings-about">
+                    <div class="app-logo">💊</div>
+                    <div class="app-name">MedTracker</div>
+                    <div class="app-version">Version 2.0.0</div>
+                    <div class="app-description">
+                        Smart medication tracking with FDA drug information and natural language processing.
+                    </div>
+                    <div class="app-credits">
+                        Data provided by OpenFDA & RxNorm
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <script src="/static/app.js"></script>
 </body>
 </html>
