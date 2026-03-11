@@ -1,0 +1,84 @@
+from datetime import date, datetime, time
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from backend.database import get_db
+from backend.models import Medication as MedicationModel, MedicationLog as LogModel
+from backend.agents.adherence_agent import AdherenceAgent
+from backend.agents.schedule_agent import ScheduleAgent
+from backend.agents.streak_agent import StreakAgent
+
+router = APIRouter()
+
+
+@router.get("/stats/adherence")
+def get_adherence_stats(period: str = "weekly", db: Session = Depends(get_db)):
+    """Get comprehensive adherence statistics using AdherenceAgent"""
+    try:
+        adherence_agent = AdherenceAgent(db)
+        report = adherence_agent.calculate_adherence(days=7)
+        today = adherence_agent.get_today_summary()
+        return {
+            'today_taken': today['taken'],
+            'today_expected': today['expected'],
+            'today_remaining': max(0, today['expected'] - today['taken']),
+            'adherence_rate': report.overall_rate,
+            'current_streak': report.daily_breakdown[-1].get('rate', 0) if report.daily_breakdown else 0,
+            'weekly_breakdown': report.daily_breakdown,
+            'by_medication': report.by_medication,
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/stats/streak")
+def get_streak_info(db: Session = Depends(get_db)):
+    """Get streak information using StreakAgent"""
+    adherence_agent = AdherenceAgent(db)
+    streak_agent = StreakAgent(adherence_agent)
+    streak_info = streak_agent.get_streak_info()
+    return {
+        'streak': streak_agent.format_streak_info(streak_info),
+        'status': streak_agent.check_streak_status(),
+    }
+
+
+@router.get("/stats/today")
+def get_today_status(db: Session = Depends(get_db)):
+    """Get today's medication status using agents"""
+    schedule_agent = ScheduleAgent(db)
+    schedule = schedule_agent.get_today_schedule()
+    adherence_agent = AdherenceAgent(db)
+    today = adherence_agent.get_today_summary()
+    return {
+        'date': today['date'],
+        'pending': schedule.now + schedule.later + schedule.missed,
+        'taken': schedule.taken,
+        'total': len(schedule.all_doses),
+        'completed': len(schedule.taken),
+        'pending_count': schedule.pending_count,
+        'is_complete': schedule.is_complete,
+        'adherence': today,
+    }
+
+
+@router.get("/stats/summary")
+def get_stats_summary(db: Session = Depends(get_db)):
+    """Get summary statistics for the dashboard"""
+    active_count = db.query(MedicationModel).filter(MedicationModel.is_active == True).count()
+    today = date.today()
+    today_logs = db.query(LogModel).filter(
+        LogModel.taken_at >= datetime.combine(today, time.min),
+        LogModel.taken_at <= datetime.combine(today, time.max),
+        LogModel.was_taken == True,
+    ).count()
+    total_count = db.query(MedicationModel).count()
+    return {
+        "active_medications": active_count,
+        "taken_today": today_logs,
+        "total_medications": total_count,
+        "inactive_medications": total_count - active_count,
+    }
