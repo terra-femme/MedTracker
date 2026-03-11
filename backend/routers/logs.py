@@ -53,7 +53,12 @@ def create_log(log_data: dict, db: Session = Depends(get_db)):
 
     return {
         "success": True,
-        "message": f"Dose {'taken' if was_taken else 'missed'} logged successfully",
+        "already_logged": dose_log.already_logged,
+        "message": (
+            "You've already logged this medication today."
+            if dose_log.already_logged
+            else f"Dose {'taken' if was_taken else 'missed'} logged successfully"
+        ),
         "log": {
             "id": dose_log.log_id,
             "medication_id": dose_log.medication_id,
@@ -96,7 +101,12 @@ def quick_log_dose(log_data: dict, db: Session = Depends(get_db)):
 
     return {
         "success": True,
-        "message": f"Dose {'taken' if was_taken else 'missed'} logged successfully",
+        "already_logged": dose_log.already_logged,
+        "message": (
+            "You've already logged this medication today."
+            if dose_log.already_logged
+            else f"Dose {'taken' if was_taken else 'missed'} logged successfully"
+        ),
         "log": {
             "id": dose_log.log_id,
             "medication_id": dose_log.medication_id,
