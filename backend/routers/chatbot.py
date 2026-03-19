@@ -5,8 +5,9 @@ from backend.database import get_db
 from backend.models import Medication as MedicationModel
 from backend.core import state
 from backend.medication_langgraph import LANGGRAPH_AVAILABLE
+from backend.core.security import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 # ============================================================================

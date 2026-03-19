@@ -19,7 +19,7 @@ from backend.models import Reminder as ReminderModel, PushSubscription as PushSu
 from backend.agents.schedule_agent import ScheduleAgent
 from backend.services.push_service import is_push_configured, send_push_notification
 
-from backend.routers import medications, logs, stats, schedule, reminders, push, chatbot, autocomplete
+from backend.routers import medications, logs, stats, schedule, reminders, push, chatbot, autocomplete, auth
 
 logger = logging.getLogger(__name__)
 
@@ -121,9 +121,15 @@ async def lifespan(app_instance: FastAPI):
                        id="reset_is_sent", replace_existing=True)
     _scheduler.start()
     logger.info("APScheduler started — push notification jobs registered")
-    yield
-    _scheduler.shutdown(wait=False)
-    logger.info("APScheduler stopped")
+    try:
+        yield
+    finally:
+        try:
+            _scheduler.pause()          # stop new jobs from firing immediately
+            _scheduler.shutdown(wait=False)
+            logger.info("APScheduler stopped")
+        except Exception as exc:
+            logger.warning(f"APScheduler shutdown error (safe to ignore): {exc}")
 
 
 # ============================================================================
@@ -152,6 +158,7 @@ else:
     app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 # Register routers
+app.include_router(auth.router)
 app.include_router(medications.router)
 app.include_router(logs.router)
 app.include_router(stats.router)
@@ -178,6 +185,20 @@ async def serve_homepage():
         if os.path.exists(path):
             return FileResponse(path)
     return {"message": "MedTracker API is running! Add index.html to frontend/ folder"}
+
+
+@app.get("/sw.js")
+async def serve_service_worker():
+    """Serve service worker at root scope — required for push notifications to work."""
+    possible_paths = [
+        os.path.join(os.path.dirname(__file__), "frontend", "sw.js"),
+        os.path.join("frontend", "sw.js"),
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            return FileResponse(path, media_type="application/javascript")
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404, detail="sw.js not found")
 
 
 @app.get("/api/health")

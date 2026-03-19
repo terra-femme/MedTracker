@@ -1,16 +1,184 @@
-fastapi==0.104.1
-uvicorn==0.24.0
-sqlalchemy==2.0.23
-pydantic==2.5.0
+# =============================================================================
+# MedTracker - Complete Requirements
+# =============================================================================
+# Last Updated: December 2025
+# 
+# INSTALLATION:
+#   pip install -r requirements.txt --break-system-packages
+#
+# WHY --break-system-packages?
+#   On newer Linux/Mac systems, Python is "externally managed" to prevent
+#   conflicts with system packages. This flag allows pip to install anyway.
+#   In production, you'd use a virtual environment instead.
+# =============================================================================
 
-Testing environment:
-python -m venv venv
 
-Activating venv:
-venv\Scripts\activate
+# =============================================================================
+# CORE WEB FRAMEWORK
+# =============================================================================
+# FastAPI: Modern, fast web framework for building APIs
+# Think of it as the "skeleton" of your app that handles HTTP requests
+fastapi>=0.115.0
 
-You will need to install Rust in powershell for pydantic (cd $HOME)
-Run in powershell:
+# Uvicorn: The server that runs your FastAPI app
+# Like a waiter that serves your API to users
+uvicorn>=0.32.0
 
-Invoke-WebRequest -Uri https://win.rustup.rs -UseBasicParsing -OutFile rustup-init.exe
-.\rustup-init.exe
+# Pydantic: Data validation (checks that inputs are correct)
+# CRITICAL in health-tech: ensures medication data is valid!
+pydantic>=2.5.0
+
+
+# =============================================================================
+# DATABASE
+# =============================================================================
+# SQLAlchemy: Talk to databases using Python (not raw SQL)
+# Your medications, logs, and reminders are stored here
+sqlalchemy>=2.0.23
+
+
+# =============================================================================
+# HTTP CLIENT
+# =============================================================================
+# Requests: Make HTTP calls to external APIs
+# Used for: RxNorm API, OpenFDA API
+requests>=2.32.0
+
+
+# =============================================================================
+# AI/ML - LANGCHAIN ECOSYSTEM
+# =============================================================================
+# LangChain Core: The foundation for LLM applications
+# Think of it as the "engine" that powers AI features
+langchain>=0.3.0
+
+# LangChain Community: Pre-built integrations (Ollama, ChromaDB, etc.)
+# These are "plugins" that connect LangChain to different services
+langchain-community>=0.3.0
+
+# LangGraph: Stateful, multi-step AI workflows (NEW!)
+# This enables decision trees, loops, and safety checks
+# CRITICAL for health-tech: allows conditional routing based on question type
+langgraph>=0.2.0
+
+# LangGraph (Advanced Chatbot Workflow)
+langgraph>=0.1.0
+langgraph-checkpoint-sqlite>=1.0.0
+
+
+# =============================================================================
+# VECTOR DATABASE (for RAG)
+# =============================================================================
+# ChromaDB: Stores text as vectors for semantic search
+# This is how your chatbot "remembers" medication information
+chromadb>=0.4.0
+
+
+# =============================================================================
+# EMBEDDINGS (Convert text to numbers)
+# =============================================================================
+# Sentence Transformers: Creates embeddings from text
+# "Blood pressure medicine" and "hypertension drug" become similar numbers
+sentence-transformers>=2.2.0
+
+# Hugging Face Hub: Download pre-trained AI models
+huggingface-hub>=0.20.0
+
+
+# =============================================================================
+# LOCAL LLM (Privacy-First!)
+# =============================================================================
+# Ollama: Run LLMs locally - NO data leaves your computer!
+# HIPAA-friendly: Patient data never goes to cloud APIs
+ollama>=0.3.0
+
+
+# =============================================================================
+# FILE HANDLING
+# =============================================================================
+# Python Multipart: Handle file uploads (for future OCR feature)
+python-multipart>=0.0.6
+
+# Python Dateutil: Better date/time handling
+# Important for medication schedules and reminders
+python-dateutil>=2.8.2
+
+
+# =============================================================================
+# TYPE HINTS & UTILITIES
+# =============================================================================
+# Typing Extensions: Advanced type hints for cleaner code
+typing_extensions>=4.15.0
+
+
+# =============================================================================
+# PUSH NOTIFICATIONS
+# =============================================================================
+# pywebpush: Send Web Push Protocol notifications to browsers
+pywebpush>=1.14.0
+
+# APScheduler: Background job scheduler (runs inside FastAPI process)
+# Used to check medication schedule every 60s and fire push notifications
+apscheduler>=3.10.0
+
+# python-dotenv: Load VAPID keys and config from .env file
+python-dotenv>=1.0.0
+
+
+# =============================================================================
+# AUTHENTICATION
+# =============================================================================
+# python-jose: JWT token creation and verification
+python-jose[cryptography]>=3.3.0
+
+# bcrypt: Password hashing — used directly (passlib incompatible with bcrypt 4+)
+# chromadb requires bcrypt>=4.0.1, so passlib[bcrypt] cannot be used
+bcrypt>=4.0.1
+
+
+# =============================================================================
+# HEALTH-TECH NOTES FOR YOUR LEARNING:
+# =============================================================================
+#
+# 🔒 PRIVACY-FIRST ARCHITECTURE:
+#    - Ollama runs LOCALLY (no cloud API calls with patient data)
+#    - SQLite stores data LOCALLY (no external database)
+#    - Only drug NAMES go to RxNorm/OpenFDA (not patient info)
+#
+# 📊 VERSION PINNING:
+#    - We use ">=" (minimum version) not "==" (exact version)
+#    - This allows bug fixes while preventing breaking changes
+#    - In production healthcare, you might pin exact versions for stability
+#
+# 🏥 DEPENDENCY CHAIN:
+#    Your App
+#       └── FastAPI (web framework)
+#       └── LangGraph (AI workflows)
+#              └── LangChain (LLM foundation)
+#                     └── Ollama (local LLM)
+#                     └── ChromaDB (vector storage)
+#                     └── HuggingFace (embeddings)
+#
+# 🚀 WHAT EACH LIBRARY DOES IN YOUR APP:
+#
+#    USER TYPES: "Can I take ibuprofen with my blood pressure meds?"
+#         │
+#         ▼
+#    [FastAPI] receives the HTTP request
+#         │
+#         ▼
+#    [LangGraph] routes to "interaction_check" node
+#         │
+#         ▼
+#    [LangChain + ChromaDB] retrieves relevant drug info
+#         │
+#         ▼
+#    [Ollama + LangChain] generates the response
+#         │
+#         ▼
+#    [LangGraph] adds safety disclaimers
+#         │
+#         ▼
+#    [FastAPI] sends response back to user
+#
+# =============================================================================

@@ -42,8 +42,9 @@ class AdherenceAgent:
         rate = agent.get_medication_adherence(med_id, days=30)
     """
     
-    def __init__(self, db_session):
+    def __init__(self, db_session, user_id: int = None):
         self.db = db_session
+        self.user_id = user_id
     
     def calculate_adherence(self, days: int = 7, 
                            end_date: Optional[date] = None) -> AdherenceReport:
@@ -188,10 +189,13 @@ class AdherenceAgent:
         """Get medications active during the date range"""
         from backend.models import Medication as MedicationModel
         
-        db_meds = self.db.query(MedicationModel).filter(
+        med_query = self.db.query(MedicationModel).filter(
             MedicationModel.is_active == True,
             MedicationModel.start_date <= end_date
-        ).all()
+        )
+        if self.user_id is not None:
+            med_query = med_query.filter(MedicationModel.user_id == self.user_id)
+        db_meds = med_query.all()
         
         return [
             {

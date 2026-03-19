@@ -5,12 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models import Medication as MedicationModel, Reminder as ReminderModel
+from backend.models import Medication as MedicationModel, Reminder as ReminderModel, User
 from backend import schemas
 from backend.agents.medication_agent import MedicationAgent
 from backend.core import state
+from backend.core.security import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("/medications", response_model=List[schemas.Medication])
@@ -18,16 +19,11 @@ def get_medications(
     active_only: bool = False,
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """
-    Get all medications using MedicationAgent
-    - active_only: if True, only return active medications
-    - skip: pagination offset
-    - limit: max number to return
-    """
     try:
-        query = db.query(MedicationModel)
+        query = db.query(MedicationModel).filter(MedicationModel.user_id == current_user.id)
         if active_only:
             query = query.filter(MedicationModel.is_active == True)
         return query.offset(skip).limit(limit).all()
@@ -38,23 +34,28 @@ def get_medications(
 
 
 @router.get("/medications/{medication_id}", response_model=schemas.Medication)
-def get_medication(medication_id: int, db: Session = Depends(get_db)):
-    """Get a specific medication by ID"""
-    medication = db.query(MedicationModel).filter(MedicationModel.id == medication_id).first()
+def get_medication(
+    medication_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    medication = db.query(MedicationModel).filter(
+        MedicationModel.id == medication_id,
+        MedicationModel.user_id == current_user.id,
+    ).first()
     if not medication:
         raise HTTPException(status_code=404, detail="Medication not found")
     return medication
 
 
 @router.post("/medications", response_model=schemas.Medication, status_code=status.HTTP_201_CREATED)
-def create_medication(medication: schemas.MedicationCreate, db: Session = Depends(get_db)):
-    """
-    Create a new medication (enhanced version with all fields)
-
-    Supports: form_type, strength, strength_unit, method_of_intake,
-    quantity, when_to_take, taken_for, rxcui
-    """
+def create_medication(
+    medication: schemas.MedicationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     db_medication = MedicationModel(
+        user_id=current_user.id,
         name=medication.name,
         rxcui=medication.rxcui,
         form_type=medication.form_type,
@@ -114,9 +115,12 @@ def update_medication(
     medication_id: int,
     medication: schemas.MedicationUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Update an existing medication"""
-    db_medication = db.query(MedicationModel).filter(MedicationModel.id == medication_id).first()
+    db_medication = db.query(MedicationModel).filter(
+        MedicationModel.id == medication_id,
+        MedicationModel.user_id == current_user.id,
+    ).first()
     if not db_medication:
         raise HTTPException(status_code=404, detail="Medication not found")
 
@@ -145,9 +149,20 @@ def update_medication(
 
 
 @router.delete("/medications/{medication_id}")
-def delete_medication(medication_id: int, permanent: bool = False, db: Session = Depends(get_db)):
-    """Delete (or archive) a medication"""
-    agent = MedicationAgent(db)
+def delete_medication(
+    medication_id: int,
+    permanent: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Ownership check before delete
+    med = db.query(MedicationModel).filter(
+        MedicationModel.id == medication_id,
+        MedicationModel.user_id == current_user.id,
+    ).first()
+    if not med:
+        raise HTTPException(status_code=404, detail="Medication not found")
+    agent = MedicationAgent(db, user_id=current_user.id)
     if not agent.delete(medication_id, permanent=permanent):
         raise HTTPException(status_code=404, detail="Medication not found")
     return {
@@ -158,9 +173,18 @@ def delete_medication(medication_id: int, permanent: bool = False, db: Session =
 
 
 @router.post("/medications/{medication_id}/restore")
-def restore_medication(medication_id: int, db: Session = Depends(get_db)):
-    """Restore an archived medication"""
-    agent = MedicationAgent(db)
+def restore_medication(
+    medication_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    med = db.query(MedicationModel).filter(
+        MedicationModel.id == medication_id,
+        MedicationModel.user_id == current_user.id,
+    ).first()
+    if not med:
+        raise HTTPException(status_code=404, detail="Medication not found")
+    agent = MedicationAgent(db, user_id=current_user.id)
     if not agent.restore(medication_id):
         raise HTTPException(status_code=404, detail="Medication not found")
     return {"message": "Medication restored", "id": medication_id}

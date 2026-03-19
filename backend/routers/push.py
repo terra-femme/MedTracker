@@ -2,10 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models import PushSubscription as PushSubscriptionModel
+from backend.models import PushSubscription as PushSubscriptionModel, User
 from backend.schemas import PushSubscriptionCreate
 from backend.services.push_service import is_push_configured, send_push_notification, VAPID_PUBLIC_KEY
+from backend.core.security import get_current_user
 
+# vapid-key is intentionally public — the browser needs it before the user
+# has logged in, to set up the push subscription object.
 router = APIRouter()
 
 
@@ -24,11 +27,11 @@ def get_vapid_public_key():
 
 
 @router.post("/push/subscribe", status_code=201)
-def subscribe_push(subscription: PushSubscriptionCreate, db: Session = Depends(get_db)):
-    """
-    Store a browser push subscription.
-    Re-subscribing the same endpoint re-activates it without creating a duplicate.
-    """
+def subscribe_push(
+    subscription: PushSubscriptionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     existing = (
         db.query(PushSubscriptionModel)
         .filter(PushSubscriptionModel.endpoint == subscription.endpoint)
@@ -37,6 +40,7 @@ def subscribe_push(subscription: PushSubscriptionCreate, db: Session = Depends(g
 
     if existing:
         existing.is_active = True
+        existing.user_id = current_user.id
         existing.p256dh_key = subscription.keys.p256dh
         existing.auth_key = subscription.keys.auth
         db.commit()
@@ -46,19 +50,24 @@ def subscribe_push(subscription: PushSubscriptionCreate, db: Session = Depends(g
         endpoint=subscription.endpoint,
         p256dh_key=subscription.keys.p256dh,
         auth_key=subscription.keys.auth,
+        user_id=current_user.id,
     ))
     db.commit()
     return {"success": True, "message": "Subscribed to push notifications"}
 
 
 @router.delete("/push/unsubscribe")
-def unsubscribe_push(endpoint: str, db: Session = Depends(get_db)):
-    """
-    Deactivate a push subscription (soft delete — can be re-enabled without re-subscribing).
-    """
+def unsubscribe_push(
+    endpoint: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     sub = (
         db.query(PushSubscriptionModel)
-        .filter(PushSubscriptionModel.endpoint == endpoint)
+        .filter(
+            PushSubscriptionModel.endpoint == endpoint,
+            PushSubscriptionModel.user_id == current_user.id,
+        )
         .first()
     )
     if sub:

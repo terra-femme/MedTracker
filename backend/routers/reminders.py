@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.models import Medication as MedicationModel, Reminder as ReminderModel
+from backend.core.security import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("/reminders", response_model=List[dict])

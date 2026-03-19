@@ -5,11 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models import MedicationLog as LogModel
+from backend.models import MedicationLog as LogModel, Medication as MedicationModel, User
 from backend.agents.dose_agent import DoseAgent
 from backend.agents.schedule_agent import ScheduleAgent
+from backend.core.security import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("/logs", response_model=List[dict])
@@ -18,9 +19,12 @@ def get_logs(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Get medication logs"""
-    query = db.query(LogModel)
+    # Scope logs to current user via medication ownership
+    query = db.query(LogModel).join(MedicationModel).filter(
+        MedicationModel.user_id == current_user.id
+    )
     if medication_id:
         query = query.filter(LogModel.medication_id == medication_id)
     logs = query.order_by(LogModel.taken_at.desc()).offset(skip).limit(limit).all()
@@ -37,8 +41,11 @@ def get_logs(
 
 
 @router.post("/logs", response_model=dict, status_code=status.HTTP_201_CREATED)
-def create_log(log_data: dict, db: Session = Depends(get_db)):
-    """Create a medication log entry using DoseAgent"""
+def create_log(
+    log_data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     medication_id = log_data.get("medication_id")
     was_taken = log_data.get("status") != "missed"
     notes = log_data.get("notes", "")
@@ -46,10 +53,10 @@ def create_log(log_data: dict, db: Session = Depends(get_db)):
     if not medication_id:
         raise HTTPException(status_code=400, detail="medication_id is required")
 
-    dose_agent = DoseAgent(db)
+    dose_agent = DoseAgent(db, user_id=current_user.id)
     dose_log = dose_agent.log_dose(medication_id=medication_id, taken=was_taken, notes=notes)
 
-    ScheduleAgent(db).unsnooze(medication_id)
+    ScheduleAgent(db, user_id=current_user.id).unsnooze(medication_id)
 
     return {
         "success": True,
@@ -69,11 +76,11 @@ def create_log(log_data: dict, db: Session = Depends(get_db)):
 
 
 @router.post("/logs/quick", response_model=dict, status_code=status.HTTP_201_CREATED)
-def quick_log_dose(log_data: dict, db: Session = Depends(get_db)):
-    """
-    Quickly log that a dose was taken.
-    Send: {"medication_id": 1, "was_taken": true, "timestamp": "2025-10-21T10:30:00" (optional)}
-    """
+def quick_log_dose(
+    log_data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     medication_id = log_data.get("medication_id")
     was_taken = log_data.get("was_taken", True)
     timestamp_str = log_data.get("timestamp")
@@ -88,7 +95,7 @@ def quick_log_dose(log_data: dict, db: Session = Depends(get_db)):
         else datetime.now()
     )
 
-    dose_agent = DoseAgent(db)
+    dose_agent = DoseAgent(db, user_id=current_user.id)
     dose_log = dose_agent.log_dose(
         medication_id=medication_id,
         taken=was_taken,
@@ -97,7 +104,7 @@ def quick_log_dose(log_data: dict, db: Session = Depends(get_db)):
     )
 
     if was_taken:
-        ScheduleAgent(db).unsnooze(medication_id)
+        ScheduleAgent(db, user_id=current_user.id).unsnooze(medication_id)
 
     return {
         "success": True,
@@ -117,10 +124,13 @@ def quick_log_dose(log_data: dict, db: Session = Depends(get_db)):
 
 
 @router.post("/logs/undo/{medication_id}", response_model=dict)
-def undo_dose(medication_id: int, db: Session = Depends(get_db)):
-    """Undo the most recent dose for a medication"""
+def undo_dose(
+    medication_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     try:
-        dose_agent = DoseAgent(db)
+        dose_agent = DoseAgent(db, user_id=current_user.id)
         if dose_agent.undo_last_dose(medication_id):
             return {
                 "success": True,

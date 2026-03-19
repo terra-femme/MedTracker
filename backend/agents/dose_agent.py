@@ -41,8 +41,9 @@ class DoseAgent:
         agent.undo_log(log_id=5)
     """
     
-    def __init__(self, db_session):
+    def __init__(self, db_session, user_id: int = None):
         self.db = db_session
+        self.user_id = user_id
     
     def log_dose(self, medication_id: int, taken: bool = True, 
                  taken_at: Optional[datetime] = None,
@@ -63,6 +64,12 @@ class DoseAgent:
 
         if taken_at is None:
             taken_at = datetime.now()
+
+        # Guard: verify medication belongs to the requesting user
+        med = self.db.query(Medication).filter(Medication.id == medication_id).first()
+        if med and self.user_id is not None and med.user_id != self.user_id:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=403, detail="Not authorised to log this medication")
 
         # Guard: prevent duplicate logs when the expected doses for today are already recorded
         if taken:
