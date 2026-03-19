@@ -19,7 +19,9 @@ const state = {
     stats: null,
     chatbotInitialized: false,
     chatHistory: [],
-    userMedications: []
+    userMedications: [],
+    token: localStorage.getItem('medtracker_token') || null,
+    username: localStorage.getItem('medtracker_username') || null,
 };
 
 // ============================================
@@ -32,28 +34,30 @@ const API = {
     health: () => fetch('/api/health').then(r => r.json()),
     
     // Medications
-    getMedications: () => fetch('/medications/').then(r => r.json()),
-    createMedication: (data) => fetch('/medications/', {
+    getMedications: () => authFetch('/medications').then(r => r.json()),
+    createMedication: (data) => authFetch('/medications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     }).then(r => r.json()),
-    updateMedication: (id, data) => fetch(`/medications/${id}`, {
+    updateMedication: (id, data) => authFetch(`/medications/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     }).then(r => r.json()),
-    deleteMedication: (id) => fetch(`/medications/${id}`, {
-        method: 'DELETE'
-    }).then(r => r.json()),
-    toggleMedication: (id) => fetch(`/medications/${id}/toggle`, {
+    deleteMedication: (id, permanent = false) => {
+        const url = `/medications/${id}${permanent ? '?permanent=true' : ''}`;
+        console.log('[API.deleteMedication] id:', id, 'permanent:', permanent, 'url:', url);
+        return authFetch(url, { method: 'DELETE' }).then(r => r.json());
+    },
+    toggleMedication: (id) => authFetch(`/medications/${id}/toggle`, {
         method: 'POST'
     }).then(r => r.json()),
-    
+
     // Logs
-    getLogs: () => fetch('/logs/').then(r => r.json()),
-    getLogsByMedication: (medId) => fetch(`/logs/medication/${medId}`).then(r => r.json()),
-    logDose: (medicationId, status = 'taken') => fetch('/logs/', {
+    getLogs: () => authFetch('/logs').then(r => r.json()),
+    getLogsByMedication: (medId) => authFetch(`/logs/medication/${medId}`).then(r => r.json()),
+    logDose: (medicationId, status = 'taken') => authFetch('/logs/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -64,62 +68,74 @@ const API = {
             notes: ''
         })
     }).then(r => r.json()),
-    
+
     // Schedule (time-based NOW/LATER/MISSED/TAKEN buckets)
-    getSchedule: () => fetch('/schedule/today').then(r => r.json()),
-    snoozeMedication: (id, minutes = 60) => fetch(`/schedule/snooze/${id}?minutes=${minutes}`, {
+    getSchedule: () => authFetch('/schedule/today').then(r => r.json()),
+    snoozeMedication: (id, minutes = 60) => authFetch(`/schedule/snooze/${id}?minutes=${minutes}`, {
         method: 'POST'
     }).then(r => r.json()),
-    unsnoozeMedication: (id) => fetch(`/schedule/unsnooze/${id}`, {
+    unsnoozeMedication: (id) => authFetch(`/schedule/unsnooze/${id}`, {
         method: 'POST'
     }).then(r => r.json()),
-    
+
     // Stats
-    getStats: (period = 'weekly') => fetch(`/stats/adherence?period=${period}`).then(r => r.json()),
-    getTodayStatus: () => fetch('/stats/today').then(r => r.json()),
-    
-    // Autocomplete
+    getStats: (period = 'weekly') => authFetch(`/stats/adherence?period=${period}`).then(r => r.json()),
+    getTodayStatus: () => authFetch('/stats/today').then(r => r.json()),
+
+    // Autocomplete — public, no token needed
     searchMedications: (query) => fetch(`/autocomplete/medications?q=${encodeURIComponent(query)}`).then(r => r.json()),
     getSpelling: (query) => fetch(`/autocomplete/spelling?q=${encodeURIComponent(query)}`).then(r => r.json()),
-    getDrugInfo: (name) => fetch(`/medications/drug-info/${encodeURIComponent(name)}`).then(r => r.json()),
-    
-    // CRUD Operations
-    updateMedication: (id, data) => fetch(`/medications/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    }).then(r => r.json()),
-    deleteMedication: (id) => fetch(`/medications/${id}`, {
-        method: 'DELETE'
-    }).then(r => r.json()),
-    
+    getDrugInfo: (name) => authFetch(`/medications/drug-info/${encodeURIComponent(name)}`).then(r => r.json()),
+
     // Chatbot
-    initChatbot: () => fetch('/chatbot/langgraph/initialize', {
+    initChatbot: () => authFetch('/chatbot/langgraph/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'llama3' })
     }).then(r => r.json()),
-    
-    askChatbot: (question) => fetch('/chatbot/langgraph/ask', {
+
+    askChatbot: (question) => authFetch('/chatbot/langgraph/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question })
     }).then(r => r.json()),
-    
-    syncChatbotMeds: () => fetch('/chatbot/langgraph/update-medications', {
+
+    syncChatbotMeds: () => authFetch('/chatbot/langgraph/update-medications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
     }).then(r => r.json()),
-    
+
     // Undo
-    undoDose: (medicationId) => fetch(`/logs/undo/${medicationId}`, {
+    undoDose: (medicationId) => authFetch(`/logs/undo/${medicationId}`, {
         method: 'POST'
     }).then(r => r.json()),
     
     // Debug
-    clearLogs: () => fetch('/debug/clear-logs', { method: 'POST' }).then(r => r.json())
+    clearLogs: () => authFetch('/debug/clear-logs', { method: 'POST' }).then(r => r.json())
 };
+
+// ============================================
+// AUTH FETCH — wraps every API call with Bearer token
+// ============================================
+function authFetch(url, options = {}) {
+    const headers = {
+        ...(options.headers || {}),
+        ...(state.token ? { 'Authorization': `Bearer ${state.token}` } : {}),
+    };
+    return fetch(url, { ...options, headers }).then(response => {
+        if (response.status === 401) {
+            logout(true);
+            throw new Error('Session expired. Please sign in again.');
+        }
+        if (!response.ok) {
+            return response.json()
+                .then(err => { throw new Error(err.detail || `Server error ${response.status}`); })
+                .catch(e => { throw e.message ? e : new Error(`Server error ${response.status}`); });
+        }
+        return response;
+    });
+}
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -247,10 +263,11 @@ async function loadHomeData() {
         document.getElementById('streakCount').textContent = stats?.current_streak || 0;
         document.getElementById('adherenceRate').textContent = (stats?.adherence_rate || 0) + '%';
         
-        // Update upcoming medications (show NOW + LATER buckets)
+        // Update upcoming medications (NOW + LATER + MISSED — all still need to be taken)
         const upcoming = [
             ...(schedule?.now || []).map(d => ({...d, bucket: 'now', urgent: true})),
-            ...(schedule?.later || []).map(d => ({...d, bucket: 'later'}))
+            ...(schedule?.later || []).map(d => ({...d, bucket: 'later'})),
+            ...(schedule?.missed || []).map(d => ({...d, bucket: 'missed'})),
         ];
         updateUpNext(upcoming);
         
@@ -259,8 +276,10 @@ async function loadHomeData() {
         
     } catch (error) {
         console.error('❌ Error loading home data:', error);
-        console.error('Stack:', error.stack);
-        showToast('Failed to load data: ' + error.message, 'error');
+        // Session expiry is already handled by authFetch (logout + toast) — don't double-toast
+        if (!error.message.includes('Session expired')) {
+            showToast('Failed to load data: ' + error.message, 'error');
+        }
     }
 }
 
@@ -279,10 +298,11 @@ function updateUpNext(pendingMeds) {
                 </div>
             `;
         } else {
+            // Only say "all caught up" if medications exist and none are pending
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">✅</div>
-                    <p>All caught up! You've taken all your medications for today.</p>
+                    <p>All done for today! All medications taken.</p>
                     <button class="ios-btn ios-btn-secondary" onclick="showView('schedule')">View Schedule</button>
                 </div>
             `;
@@ -294,17 +314,19 @@ function updateUpNext(pendingMeds) {
     container.innerHTML = pendingMeds.map(dose => {
         const icon = getMedicationIcon(dose.name);
         const isNow = dose.bucket === 'now';
+        const isMissed = dose.bucket === 'missed';
         const timeLabel = dose.scheduled_time ? `· ${dose.scheduled_time}` : '';
-        
+
         return `
-            <div class="up-next-item glass-card ${isNow ? 'urgent' : ''}" onclick="logDose(${dose.medication_id}, 'taken')">
+            <div class="up-next-item glass-card ${isNow ? 'urgent' : ''} ${isMissed ? 'missed' : ''}" onclick="logDose(${dose.medication_id}, 'taken')">
                 <div class="med-icon">${icon}</div>
                 <div class="up-next-info">
                     <div class="up-next-name">
-                        ${dose.name}
+                        ${escapeHtml(dose.name)}
                         ${isNow ? '<span class="badge-now">NOW</span>' : ''}
+                        ${isMissed ? '<span class="badge-missed">MISSED</span>' : ''}
                     </div>
-                    <div class="up-next-dosage">${dose.dosage || ''} ${timeLabel}</div>
+                    <div class="up-next-dosage">${escapeHtml(dose.dosage || '')} ${timeLabel}</div>
                 </div>
                 <div class="up-next-actions">
                     ${isNow ? `
@@ -646,12 +668,13 @@ async function loadMedications() {
                             </svg>
                         </button>
                         `}
-                        <button class="ios-btn ios-btn-small delete-btn" onclick="deleteMedication(${med.id})" title="Delete">
+                        ${!med.is_active ? `
+                        <button class="ios-btn ios-btn-small delete-btn" onclick="deleteMedication(${med.id})" title="Delete permanently">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                             </svg>
-                        </button>
+                        </button>` : ''}
                     </div>
                 </div>
             `;
@@ -812,20 +835,26 @@ async function unarchiveMedication(id) {
 
 // Hard Delete Medication
 async function deleteMedication(id) {
+    console.log('[deleteMedication] called with id:', id);
     const med = state.medications.find(m => m.id === id);
     const medName = med ? med.name : 'this medication';
-    
+
     if (!confirm(`⚠️ PERMANENTLY DELETE "${medName}"?\n\nThis will remove all history and cannot be undone.`)) {
+        console.log('[deleteMedication] cancelled at first confirm');
         return;
     }
-    
+
     if (!confirm(`Final confirmation: Delete ${medName} permanently?`)) {
+        console.log('[deleteMedication] cancelled at second confirm');
         return;
     }
-    
+
     try {
         showLoading(true);
-        await API.deleteMedication(id);
+        const url = `/medications/${id}?permanent=true`;
+        console.log('[deleteMedication] sending DELETE to:', url);
+        const result = await API.deleteMedication(id, true);
+        console.log('[deleteMedication] response:', result);
         showToast('Medication deleted', 'success');
         loadMedications();
         loadHomeData();
@@ -1224,8 +1253,8 @@ function displayNoDrugInfoCard(drugName, reason) {
     
     const nameField = medNameInput.closest('.form-group');
     nameField.parentNode.insertBefore(card, nameField.nextSibling);
-    
-    setTimeout(() => card.classList.add('show'), 10);
+
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('show')));
 }
 
 function displayDrugInfoCard(data) {
@@ -1240,17 +1269,26 @@ function displayDrugInfoCard(data) {
     card.className = 'drug-info-card-ios';
     
     // Handle both old and new API response formats
-    const sideEffects = data.common_side_effects || data.side_effects || [];
-    const interactions = data.do_not_mix_with || data.interactions_summary || [];
-    
-    const sideEffectsHtml = sideEffects.length > 0 
-        ? sideEffects.slice(0, 5).map(e => `<span class="side-effect-chip">${e}</span>`).join('')
+    const sideEffects = Array.isArray(data.common_side_effects || data.side_effects)
+        ? (data.common_side_effects || data.side_effects)
+        : [];
+    const interactions = Array.isArray(data.do_not_mix_with || data.interactions_summary)
+        ? (data.do_not_mix_with || data.interactions_summary)
+        : [];
+
+    const sideEffectsHtml = sideEffects.length > 0
+        ? sideEffects.slice(0, 5).map(e => `<span class="side-effect-chip">${escapeHtml(String(e))}</span>`).join('')
         : '<span class="no-data">See FDA label for side effects</span>';
-    
+
     const interactionsHtml = interactions.length > 0
-        ? interactions.slice(0, 4).map(i => `<span class="interaction-chip">${i}</span>`).join('')
+        ? interactions.slice(0, 4).map(i => `<span class="interaction-chip">${escapeHtml(String(i))}</span>`).join('')
         : '<span class="no-data">Check FDA label for interactions</span>';
-    
+
+    const takenFor = data.taken_for || data.indications || '';
+    const takenForShort = takenFor ? escapeHtml(takenFor.substring(0, 150)) + (takenFor.length > 150 ? '...' : '') : '';
+    const warning = data.important_warning || data.warnings || '';
+    const warningShort = warning ? escapeHtml(warning.substring(0, 120)) + (warning.length > 120 ? '...' : '') : '';
+
     card.innerHTML = `
         <div class="drug-info-header-ios">
             <div class="drug-info-title-ios">
@@ -1264,17 +1302,17 @@ function displayDrugInfoCard(data) {
                 </svg>
             </button>
         </div>
-        
-        ${(data.taken_for || data.indications) ? `
+
+        ${takenForShort ? `
         <div class="drug-info-section-ios">
             <div class="drug-info-label-ios">
                 <span>📋</span>
                 <span>Used For</span>
             </div>
-            <div class="drug-info-content-ios">${(data.taken_for || data.indications).substring(0, 150)}${(data.taken_for || data.indications).length > 150 ? '...' : ''}</div>
+            <div class="drug-info-content-ios">${takenForShort}</div>
         </div>
         ` : ''}
-        
+
         <div class="drug-info-section-ios">
             <div class="drug-info-label-ios">
                 <span>⚠️</span>
@@ -1282,7 +1320,7 @@ function displayDrugInfoCard(data) {
             </div>
             <div class="side-effects-list-ios">${sideEffectsHtml}</div>
         </div>
-        
+
         <div class="drug-info-section-ios">
             <div class="drug-info-label-ios">
                 <span>🚫</span>
@@ -1290,17 +1328,17 @@ function displayDrugInfoCard(data) {
             </div>
             <div class="interactions-list-ios">${interactionsHtml}</div>
         </div>
-        
-        ${(data.important_warning || data.warnings) ? `
+
+        ${warningShort ? `
         <div class="drug-info-warning-ios">
             <div class="drug-info-label-ios">
                 <span>⚡</span>
                 <span>Important Warning</span>
             </div>
-            <div class="drug-info-content-ios">${(data.important_warning || data.warnings).substring(0, 120)}${(data.important_warning || data.warnings).length > 120 ? '...' : ''}</div>
+            <div class="drug-info-content-ios">${warningShort}</div>
         </div>
         ` : ''}
-        
+
         <div class="drug-info-footer-ios">
             <div class="fda-source">Source: OpenFDA Drug Label Database</div>
             <div class="fda-disclaimer">For reference only. Consult your pharmacist for Rx questions</div>
@@ -1310,9 +1348,9 @@ function displayDrugInfoCard(data) {
     // Insert after the medication name field
     const nameField = medNameInput.closest('.form-group');
     nameField.parentNode.insertBefore(card, nameField.nextSibling);
-    
-    // Animate in
-    setTimeout(() => card.classList.add('show'), 10);
+
+    // Animate in — double rAF ensures the element is painted at opacity:0 first
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('show')));
 }
 
 function hideDrugInfoCard() {
@@ -1449,6 +1487,7 @@ function _finishAddModal() {
     closeAddModal();
     loadHomeData();
     loadMedications();
+    if (state.currentView === 'schedule') loadSchedule();
 }
 
 function renderPillIcon(med) {
@@ -1471,11 +1510,13 @@ async function submitMedication(e) {
     // Get reminder times
     const reminderTimes = getReminderTimes();
 
+    const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
     const data = {
         name: document.getElementById('medName').value,
         dosage: document.getElementById('medDosage').value,
         frequency: document.getElementById('medFrequency').value,
         notes: document.getElementById('medNotes').value,
+        start_date: today,
         is_active: true,
         reminder_times: reminderTimes  // Array of times like ["08:00", "20:00"]
     };
@@ -1675,19 +1716,132 @@ document.getElementById('chatInput')?.addEventListener('keypress', function(e) {
 });
 
 // ============================================
+// AUTH — Login, Register, Logout
+// ============================================
+function showAuthScreen() {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function showAppScreen() {
+    document.getElementById('loginScreen').style.display = 'none';
+}
+
+function toggleLoginRegister() {
+    const loginPanel = document.getElementById('loginFormPanel');
+    const registerPanel = document.getElementById('registerFormPanel');
+    const subtitle = document.getElementById('loginSubtitle');
+    if (loginPanel.style.display === 'none') {
+        loginPanel.style.display = '';
+        registerPanel.style.display = 'none';
+        subtitle.textContent = 'Sign in to continue';
+    } else {
+        loginPanel.style.display = 'none';
+        registerPanel.style.display = '';
+        subtitle.textContent = 'Create your account';
+    }
+}
+
+async function login() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!username || !password) {
+        showToast('Enter username and password', 'error');
+        return;
+    }
+    try {
+        const body = new URLSearchParams({ username, password });
+        const res = await fetch('/auth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            showToast(err.detail || 'Invalid username or password', 'error');
+            return;
+        }
+        const data = await res.json();
+        state.token = data.access_token;
+        state.username = username;
+        localStorage.setItem('medtracker_token', data.access_token);
+        localStorage.setItem('medtracker_username', username);
+        showAppScreen();
+        await loadHomeData();
+    } catch (e) {
+        showToast('Login failed — is the server running?', 'error');
+    }
+}
+
+async function register() {
+    const username = document.getElementById('regUsername').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    if (!username || !password) {
+        showToast('Username and password are required', 'error');
+        return;
+    }
+    if (password.length < 8) {
+        showToast('Password must be at least 8 characters', 'error');
+        return;
+    }
+    try {
+        const res = await fetch('/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email: email || null, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            showToast(data.detail || 'Registration failed', 'error');
+            return;
+        }
+        showToast('Account created! Sign in below.', 'success');
+        toggleLoginRegister();
+        document.getElementById('loginUsername').value = username;
+    } catch (e) {
+        showToast('Registration failed — is the server running?', 'error');
+    }
+}
+
+function logout(expired = false) {
+    state.token = null;
+    state.username = null;
+    localStorage.removeItem('medtracker_token');
+    localStorage.removeItem('medtracker_username');
+    showAuthScreen();
+    if (expired) showToast('Session expired. Please sign in again.', 'error');
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 async function init() {
-    // Check API health
-    try {
-        const health = await API.health();
-        console.log('MedTracker API:', health.status);
-    } catch (error) {
-        console.error('API not available:', error);
+    // Retry health check — server may still be starting up (LangGraph/LangChain load time)
+    let healthy = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+            const health = await API.health();
+            console.log('MedTracker API:', health.status);
+            healthy = true;
+            break;
+        } catch (e) {
+            if (attempt < 4) await new Promise(r => setTimeout(r, 1000));
+        }
+    }
+    if (!healthy) {
         showToast('Cannot connect to server', 'error');
         return;
     }
-    
+
+    // If no token, show login screen instead of loading data
+    if (!state.token) {
+        showAuthScreen();
+        return;
+    }
+
+    showAppScreen();
+
     // Load initial data
     await loadHomeData();
     
@@ -1733,6 +1887,8 @@ document.addEventListener('keydown', (e) => {
 function openSettingsModal() {
     const modal = document.getElementById('settingsModal');
     modal.classList.add('active');
+    const el = document.getElementById('settingsUsername');
+    if (el && state.username) el.textContent = `Signed in as ${state.username}`;
     
     // Load saved preferences
     loadSettings();
@@ -1796,7 +1952,7 @@ async function initPushNotifications() {
 
     try {
         // Register (or get the existing) service worker
-        const reg = await navigator.serviceWorker.register('/static/sw.js', { scope: '/' });
+        const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         await navigator.serviceWorker.ready;
 
         // Fetch VAPID public key — 503 means server not configured
@@ -1969,7 +2125,7 @@ async function clearAllData() {
         
         // Delete all medications
         for (const med of state.medications) {
-            await API.deleteMedication(med.id);
+            await API.deleteMedication(med.id, true);
         }
         
         // Clear local storage except settings

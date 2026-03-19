@@ -7,8 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#007AFF">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="apple-touch-icon" href="/static/icon-192.png">
+
     <title>MedTracker</title>
     
     <!-- SF Pro Fonts (Apple System Fonts) -->
@@ -19,6 +18,37 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <!-- Login Screen -->
+    <div id="loginScreen" style="position:fixed; inset:0; z-index:9999; background:var(--bg-primary); display:none; align-items:center; justify-content:center; padding:24px;">
+        <div class="glass-card" style="width:100%; max-width:360px; padding:40px 28px; text-align:center;">
+            <div style="font-size:56px; margin-bottom:12px;">💊</div>
+            <h1 style="font-size:26px; font-weight:700; margin-bottom:6px;">MedTracker</h1>
+            <p id="loginSubtitle" style="color:var(--text-secondary); margin-bottom:28px; font-size:15px;">Sign in to continue</p>
+
+            <!-- Sign In Form -->
+            <div id="loginFormPanel">
+                <input type="text" id="loginUsername" placeholder="Username" autocomplete="username"
+                    style="width:100%; box-sizing:border-box; margin-bottom:12px; padding:14px 16px; border-radius:12px; border:1px solid rgba(120,120,128,0.3); background:rgba(120,120,128,0.12); font-size:16px; color:inherit; outline:none;">
+                <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password"
+                    style="width:100%; box-sizing:border-box; margin-bottom:20px; padding:14px 16px; border-radius:12px; border:1px solid rgba(120,120,128,0.3); background:rgba(120,120,128,0.12); font-size:16px; color:inherit; outline:none;">
+                <button class="ios-btn ios-btn-primary" style="width:100%; margin-bottom:10px;" onclick="login()">Sign In</button>
+                <button class="ios-btn" style="width:100%;" onclick="toggleLoginRegister()">Create Account</button>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerFormPanel" style="display:none;">
+                <input type="text" id="regUsername" placeholder="Username" autocomplete="username"
+                    style="width:100%; box-sizing:border-box; margin-bottom:12px; padding:14px 16px; border-radius:12px; border:1px solid rgba(120,120,128,0.3); background:rgba(120,120,128,0.12); font-size:16px; color:inherit; outline:none;">
+                <input type="email" id="regEmail" placeholder="Email (optional)" autocomplete="email"
+                    style="width:100%; box-sizing:border-box; margin-bottom:12px; padding:14px 16px; border-radius:12px; border:1px solid rgba(120,120,128,0.3); background:rgba(120,120,128,0.12); font-size:16px; color:inherit; outline:none;">
+                <input type="password" id="regPassword" placeholder="Password (min 8 characters)" autocomplete="new-password"
+                    style="width:100%; box-sizing:border-box; margin-bottom:20px; padding:14px 16px; border-radius:12px; border:1px solid rgba(120,120,128,0.3); background:rgba(120,120,128,0.12); font-size:16px; color:inherit; outline:none;">
+                <button class="ios-btn ios-btn-primary" style="width:100%; margin-bottom:10px;" onclick="register()">Create Account</button>
+                <button class="ios-btn" style="width:100%;" onclick="toggleLoginRegister()">Back to Sign In</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Mesh Gradient Background -->
     <div class="mesh-gradient-bg">
         <div class="gradient-blob blob-1"></div>
@@ -602,6 +632,25 @@
                     </button>
                 </div>
                 
+                <!-- Account Section -->
+                <div class="settings-section">
+                    <div class="settings-section-title">
+                        <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span id="settingsUsername">Account</span>
+                    </div>
+                    <button class="settings-action-btn danger" onclick="logout(); closeSettingsModal();">
+                        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span>Sign Out</span>
+                    </button>
+                </div>
+
                 <!-- About Section -->
                 <div class="settings-section settings-about">
                     <div class="app-logo">💊</div>
@@ -627,6 +676,6 @@
     <!-- Toast Notifications -->
     <div class="toast-container" id="toastContainer"></div>
     
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=3"></script>
 </body>
 </html>
