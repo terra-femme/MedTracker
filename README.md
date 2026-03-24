@@ -1,127 +1,91 @@
-> Note: This is a foundational scaffold for a medication reminder app. Core architecture is in place; features are being developed iteratively to reflect real-world healthcare IT workflows.
-
 # MedTracker
-A medication management application designed to help patients track medication schedules, set reminders, and maintain adherence records. Built with healthcare workflows and patient safety in mind.
+
+A medication safety AI system with a multi-agent pipeline for tracking schedules, checking drug interactions, and maintaining adherence records.
 
 ![MedTracker widget on iPhone showing 8am medication taken and 1pm pending](.github/images/medTracker_widget.jpeg)
 
-## Problem Being Solved
-Medication non-adherence costs the US healthcare system $100-300B annually and leads to approximately 125,000 deaths per year. Patients struggle to manage complex medication schedules, especially those with multiple prescriptions or chronic conditions. MedTracker addresses this by providing an intuitive interface for medication tracking with timely reminders.
+## What it does
 
-## Healthcare Context
-This project demonstrates understanding of:
+MedTracker combines a FastAPI backend with a LangGraph-orchestrated multi-agent system to handle medication management. Users track medications, receive reminders, and interact with an AI chatbot that checks drug interactions, calculates doses, and monitors adherence — with safety guardrails running on every input and response.
 
-- **Patient-centered design**: Simple interface for users with varying technical literacy
-- **Medication management workflows**: Dosage tracking, schedule management, refill reminders
-- **Healthcare data considerations**: Designed with future HIPAA compliance in mind for protected health information (PHI)
+## AI Architecture
 
-**Privacy & Security:**
-- Designed with HIPAA compliance principles in mind
-- Local data storage options for privacy-conscious users
-- Planned encryption for sensitive medication data
-- No third-party data sharing without explicit consent
+```
+User Input
+     │
+     ▼
+┌────────────────────────────────────────────────┐
+│                 Safety Layer                   │
+│   PIIDetector → ContentFilter → Emergency      │
+└────────────────────────────────────────────────┘
+     │
+     ▼
+┌────────────────────────────────────────────────┐
+│         LangGraph V2 Orchestrator              │
+│           (SQLite persistence)                 │
+└───────────────┬────────────────────────────────┘
+                │
+     ┌──────────┴──────────────────────┐
+     ▼                                 ▼
+ClassifierAgent                   RAG Pipeline
+     │                         Chroma + MMR retrieval
+     ├── InteractionAgent       RxNorm API + OpenFDA API
+     ├── DoseAgent
+     ├── AdherenceAgent
+     ├── ScheduleAgent
+     ├── StreakAgent
+     ├── MedicationAgent
+     ├── GeneratorAgent
+     ├── SafetyAgent
+     └── AutocompleteAgent
+```
 
-## Features
-- **Medication Tracking**: Add, edit, and organize medications with dosage and frequency information
-- **Medication Schedule**: Medication schedule creation and management
-- **Smart Reminders**: Receive notifications at scheduled times for medication intake
-- **Adherence Tracking**: Track whether medications were taken on time
-- **Medical History**: View medication history and adherence reports
+## Safety Layer
 
-## Installation
+Built from scratch — no third-party safety libraries.
+
+- **PIIDetector**: Scans all inputs for 7 PHI pattern types (SSN, phone, email, MRN, DOB, credit card) with medical context scoring before any data is logged or persisted
+- **MedicalContentFilter**: Blocks 10 categories of dangerous AI output including self-harm, prescription change suggestions, unqualified diagnoses, and emergency delay language
+- **Emergency guardrail**: Detects overdose, crisis, and emergency keywords in real time; halts the pipeline and returns an immediate escalation response
+- **HIPAA-aware design**: PHI is redacted before logging; SQLite audit trail persists conversation state across server restarts
+
+## Technical Highlights
+
+- **MMR retrieval for drug interaction diversity** — Chroma vector store uses maximal marginal relevance to balance relevance and diversity when retrieving drug interaction context from RxNorm and FDA label data
+- **LangGraph V2 with SQLite persistence and message summarization** — conversation state survives server restarts; long sessions are summarized to stay within context limits while preserving safety warnings
+- **Custom PIIDetector with 7 PHI pattern types and medical context scoring** — confidence score is boosted when medical context keywords are present alongside detected patterns, reducing false negatives in clinical language
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Python, FastAPI |
+| AI orchestration | LangGraph V2, LangChain |
+| Vector store | Chroma, HuggingFace embeddings |
+| Drug data | RxNorm API, OpenFDA API |
+| Database | SQLite |
+| Frontend | HTML / CSS / JS |
+
+## Running locally
 
 ```bash
-# Clone the repository
 git clone https://github.com/terra-femme/MedTracker.git
 cd MedTracker
-
-# Create virtual environment
 python -m venv venv
-
-# Activate it
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# Initialize database
 python setup_database.py
-
-# Run the application
 python main.py
 ```
 
-The application will be available at `http://localhost:8000`
+App runs at `http://localhost:8000`. Requires Python 3.9+.
 
-### Requirements
-- Python 3.9+
-- pip
+## Tests
 
-## Usage
-
-[Coming Soon: instructions for how to use the app]
-
-```bash
-# Start the app
-python main.py
-
-# Add a new medication
-# Set reminder time
-# Receive notifications
-```
-
-## Architecture
-
-```
-MedTracker/
-├── backend/               # FastAPI backend
-├── frontend/              # HTML/CSS/JS frontend
-├── main.py                # Entry point
-├── requirements.txt
-├── setup_database.py
-├── .gitignore
-└── README.md
-```
-
-## Tech Stack
-- **Backend**: Python with FastAPI
-- **Frontend**: HTML/CSS with JavaScript
-- **Database**: SQLite (development), designed to scale to PostgreSQL
-- **Architecture**: REST API with separate frontend/backend
-
-## Technologies Used
-- Python 3.9+
-- FastAPI
-- SQLite
-- HTML/CSS/JavaScript
-
-## Current Status & Roadmap
-- [x] Basic project structure
-- [ ] User authentication
-- [ ] Medication database
-- [ ] Reminder system
-- [ ] Notification system
-- [ ] Adherence tracking dashboard
-
-**Status**: Active Development — v0.1.0 (Foundational scaffold)
-
-## Development
-
-### Contributing
-1. Create a feature branch: `git checkout -b feature/your-feature`
-2. Make your changes and commit: `git commit -m "Add your feature"`
-3. Push: `git push origin feature/your-feature`
-4. Create a Pull Request on GitHub
-
-### Running Tests
 ```bash
 pytest tests/
 ```
 
-## License
-MIT License — Feel free to use this project as reference or foundation
-
 ## Author
-Kristy aka Terra Femme — Aspiring Healthcare IT Engineer | Focused on modular workflows, Git hygiene, and FHIR-aligned development
 
-> This project is part of my portfolio demonstrating healthcare IT skills and FHIR integration knowledge.
+Kristy (Terra Femme) — Healthcare IT engineer focused on multi-agent AI workflows and patient safety systems.

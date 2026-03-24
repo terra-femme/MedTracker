@@ -34,12 +34,12 @@ class MedicationSuggestion:
 class AutocompleteAgent:
     """
     Agent that searches for medications and returns clean suggestions
-    
+
     Usage:
         agent = AutocompleteAgent(knowledge_base)
         results = agent.search("advil", limit=5)
     """
-    
+
     def __init__(self, knowledge_base):
         self.kb = knowledge_base
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -78,11 +78,11 @@ class AutocompleteAgent:
             "Gabapentin", "Tramadol", "Tapentadol", "Cyclobenzaprine", "Meloxicam",
             "Meclizine", "Scopolamine", "Ondansetron"
         ]
-    
+
     def search(self, query: str, limit: int = 6) -> Dict:
         """
         Main entry point: Search for medications
-        
+
         Returns:
             {
                 "query": str,
@@ -92,15 +92,15 @@ class AutocompleteAgent:
             }
         """
         self.logger.info(f"🔍 Search started for: '{query}'")
-        
+
         if not query or len(query) < 2:
             return {"query": query, "suggestions": [], "spelling_suggestions": [], "debug": {"error": "Query too short"}}
-        
+
         try:
             # Step 1: Get filtered, scored results from knowledge base
             raw_results = self.kb.autocomplete(query, limit)
             self.logger.debug(f"Autocomplete results: {len(raw_results)}")
-            
+
             # Always inject common drugs as candidates so well-known medications
             # surface even when RxNorm returns only brand variants or obscure names.
             # Score of 10 keeps them below strong RxNorm direct matches but
@@ -114,17 +114,17 @@ class AutocompleteAgent:
                         "rxcui": "",
                         "score": 10.0
                     })
-            
+
             # Step 2: Filter and transform
             suggestions = self._process_results(raw_results, query)
             self.logger.info(f"Processed suggestions: {len(suggestions)}")
-            
+
             # Step 3: If few/poor results, supplement with common drugs cache
             if len(suggestions) < 3:
                 self.logger.info(f"Few suggestions ({len(suggestions)}), checking common drugs cache")
                 query_lower = query.lower()
                 existing_names = {s.base_name.lower() for s in suggestions}
-                
+
                 for drug in self._common_drugs:
                     if drug.lower().startswith(query_lower) and drug.lower() not in existing_names:
                         suggestions.append(MedicationSuggestion(
@@ -138,14 +138,14 @@ class AutocompleteAgent:
                         ))
                         if len(suggestions) >= 6:
                             break
-            
+
             # Step 4: If still no suggestions, try spelling
             spelling_suggestions = []
             if len(suggestions) == 0:
                 self.logger.info("No medication suggestions, trying spelling...")
                 spelling_suggestions = self.kb.get_spelling_suggestions(query)[:5]
                 self.logger.info(f"Spelling suggestions: {spelling_suggestions}")
-                
+
                 # Convert spelling suggestions to proper format
                 for spelling in spelling_suggestions:
                     suggestions.append(MedicationSuggestion(
@@ -157,7 +157,7 @@ class AutocompleteAgent:
                         score=0,
                         source="spelling"
                     ))
-            
+
             # Step 4: Build debug info
             debug = {
                 "raw_count": len(raw_results),
@@ -165,14 +165,14 @@ class AutocompleteAgent:
                 "first_raw": raw_results[0]["name"] if raw_results else None,
                 "filter_applied": True
             }
-            
+
             return {
                 "query": query,
                 "suggestions": [self._to_dict(s) for s in suggestions],
                 "spelling_suggestions": spelling_suggestions,
                 "debug": debug
             }
-            
+
         except Exception as e:
             self.logger.error(f"Search failed: {e}", exc_info=True)
             return {
@@ -181,7 +181,7 @@ class AutocompleteAgent:
                 "spelling_suggestions": [],
                 "debug": {"error": str(e)}
             }
-    
+
     def _process_results(self, raw_results: List[Dict], query: str) -> List[MedicationSuggestion]:
         """Process, filter, and rank RxNorm results by relevance."""
         suggestions = []
@@ -235,14 +235,14 @@ class AutocompleteAgent:
         # Sort by final score so highest-relevance results always come first
         suggestions.sort(key=lambda s: s.score, reverse=True)
         return suggestions[:6]
-    
+
     def _is_valid(self, name: str) -> bool:
         """Check if this looks like a real medication"""
         if not name:
             return False
-        
+
         n = name.lower()
-        
+
         # Explicitly BAD patterns - medical supplies/devices
         bad_patterns = [
             # Supplies (be specific to avoid filtering real drug names)
@@ -259,45 +259,45 @@ class AutocompleteAgent:
             # Weird codes
             "-tk", "{", "}", "[unspecified]", "[discontinued]",
         ]
-        
+
         for bad in bad_patterns:
             if bad in n:
                 return False
-        
+
         # Must look like a drug name (mostly letters, no excessive punctuation)
         letters = [c for c in name if c.isalpha()]
         if len(letters) < 3:
             return False
-            
+
         # Good medications usually have proper names (not mostly numbers/symbols)
         # Check that at least 50% of characters are letters
         if len(letters) / len(name) < 0.5:
             return False
-        
+
         return True
-    
+
     def _parse_drug_name(self, name: str) -> Dict:
         """Extract base name, strength, form from RxNorm name"""
         import re
-        
+
         result = {
             "base_name": name,
             "strength": None,
             "form": None
         }
-        
+
         # Extract strength (e.g., "200 MG")
         strength_match = re.search(r'(\d+\.?\d*)\s*(MG|MCG|G|ML|%)', name, re.IGNORECASE)
         if strength_match:
             result["strength"] = f"{strength_match.group(1)} {strength_match.group(2).upper()}"
-        
+
         # Extract form
         forms = ["Tablet", "Capsule", "Injection", "Solution", "Suspension"]
         for form in forms:
             if form.lower() in name.lower():
                 result["form"] = form
                 break
-        
+
         # Extract base name (first 1-2 words before numbers)
         words = name.split()
         base_words = []
@@ -305,12 +305,12 @@ class AutocompleteAgent:
             if any(c.isdigit() for c in word):
                 break
             base_words.append(word)
-        
+
         if base_words:
             result["base_name"] = " ".join(base_words[:2])
-        
+
         return result
-    
+
     def _to_dict(self, suggestion: MedicationSuggestion) -> Dict:
         """Convert to JSON-serializable dict"""
         return {
@@ -327,16 +327,16 @@ class AutocompleteAgent:
 # Quick test
 if __name__ == "__main__":
     from backend.medication_knowledge import MedicationKnowledgeBase
-    
+
     kb = MedicationKnowledgeBase()
     agent = AutocompleteAgent(kb)
-    
+
     print("=" * 60)
     print("TESTING AUTOCOMPLETE AGENT")
     print("=" * 60)
-    
+
     for query in ["advil", "aspirin", "metform", "lisino"]:
-        print(f"\n🔍 Query: '{query}'")
+        print(f"\nQuery: '{query}'")
         result = agent.search(query)
         print(f"   Suggestions: {len(result['suggestions'])}")
         for s in result["suggestions"][:3]:
