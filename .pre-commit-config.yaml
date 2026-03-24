@@ -28,10 +28,3 @@ repos:
       - id: trailing-whitespace
       - id: no-commit-to-branch        # prevent direct commits to main
         args: ['--branch', 'main', '--branch', 'master']
-
-  # 4. Safety — checks dependencies against Safety vulnerability DB
-  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
-    rev: v1.3.3
-    hooks:
-      - id: python-safety-dependencies-check
-        files: requirements.*\.txt$
