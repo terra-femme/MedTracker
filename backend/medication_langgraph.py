@@ -43,12 +43,15 @@ response = chatbot.ask("Can I take ibuprofen?")
 # IMPORTS
 # =============================================================================
 
+import logging
 from typing import TypedDict, Annotated, Literal, List, Dict, Optional, Sequence
 from datetime import datetime
 import json
 import os
 import re
 import operator  # For reducer functions
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # LANGGRAPH IMPORTS - V2 FEATURES
@@ -64,11 +67,13 @@ try:
     except ImportError:
         SQLITE_AVAILABLE = False
         SqliteSaver = None
+        logger.warning("SqliteSaver not available — falling back to MemorySaver (no persistence)")
 
     LANGGRAPH_AVAILABLE = True
 
-except ImportError:
+except ImportError as e:
     LANGGRAPH_AVAILABLE = False
+    logger.error("LangGraph not installed: %s", e)
 
 # =============================================================================
 # LANGCHAIN IMPORTS - Using NEW import paths (v1.2+)
@@ -94,8 +99,7 @@ try:
 
 except ImportError as e:
     LANGCHAIN_AVAILABLE = False
-
-print("=" * 60)
+    logger.error("LangChain not available: %s", e)
 
 
 # =============================================================================
@@ -504,6 +508,7 @@ def create_classifier_node_v2(llm):
         if PHIDetector.contains_phi(question):
             audit_entry["phi_detected"] = True
             audit_entry["phi_types"] = list(PHIDetector.detect(question).keys())
+            logger.warning("PHI detected in user question — types: %s", audit_entry["phi_types"])
 
         # Add user message to conversation
         new_message = HumanMessage(content=question)
@@ -538,12 +543,15 @@ Respond with ONLY the category name:"""
 
             if any(kw in question.lower() for kw in emergency_keywords):
                 classification = "emergency"
+                logger.warning("Emergency keywords detected in question")
 
+            logger.debug("Question classified as: %s", classification)
             audit_entry["classification"] = classification
 
         except Exception as e:
             classification = "medication_info"
             audit_entry["error"] = str(e)
+            logger.error("Classification failed, defaulting to medication_info: %s", e)
 
         # Return state updates (reducer will APPEND to lists!)
         return {
@@ -587,9 +595,11 @@ def create_rag_node_v2(vectorstore, llm):
             docs = retriever.invoke(question)
             context = "\n\n".join([doc.page_content for doc in docs])
             audit_entry["docs_retrieved"] = len(docs)
+            logger.debug("RAG retrieved %d documents", len(docs))
         except Exception as e:
             context = ""
             audit_entry["retrieval_error"] = str(e)
+            logger.error("RAG retrieval failed: %s", e)
 
         # Format user medications
         meds_text = "None on file"
@@ -781,6 +791,7 @@ def create_phi_removal_node():
                 # Create removal command (if message has proper id)
                 if hasattr(msg, 'id') and msg.id:
                     removal_commands.append(RemoveMessage(id=msg.id))
+                    logger.warning("PHI detected in message %s — queued for removal", msg.id)
 
                 # Create audit entry
                 audit_entries.append({
@@ -860,6 +871,7 @@ def create_emergency_node_v2():
 
     def handle_emergency(state: MedTrackerStateV2) -> Dict:
 
+        logger.warning("EMERGENCY NODE TRIGGERED — routing to emergency response")
         audit_entry = {
             "timestamp": datetime.now().isoformat(),
             "node": "emergency_handler_v2",

@@ -2,6 +2,7 @@
 Medication RAG Chatbot Engine - OLLAMA ONLY
 """
 
+import logging
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.llms import Ollama
@@ -11,20 +12,26 @@ from langchain_core.runnables import RunnablePassthrough
 from typing import List, Dict
 from .medication_knowledge import MedicationKnowledgeBase
 
+logger = logging.getLogger(__name__)
+
 
 class MedicationRAGChatbot:
     """RAG Chatbot using Ollama"""
 
     def __init__(self, model_name="llama3", user_medications=None):
+        logger.info("Initializing MedicationRAGChatbot (model=%s)", model_name)
+
         self.embeddings = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
+        logger.debug("Embedding model loaded: all-MiniLM-L6-v2")
 
         self.vectorstore = Chroma(
             collection_name="medication_knowledge",
             embedding_function=self.embeddings,
             persist_directory="./chroma_db"
         )
+        logger.debug("Chroma vectorstore initialized")
 
         self.llm = Ollama(model=model_name, temperature=0.1)
 
@@ -52,6 +59,7 @@ class MedicationRAGChatbot:
 
         self.rag_chain = self._create_rag_chain_with_db(user_medications)
         self.knowledge_base = MedicationKnowledgeBase()
+        logger.info("MedicationRAGChatbot ready")
 
     def _create_rag_chain_with_db(self, user_medications=None):
         """Create RAG chain with direct database access for user meds"""
@@ -76,6 +84,7 @@ Answer:"""
 
         def format_user_meds(_):
             if not user_medications:
+                logger.debug("No user medications on file")
                 return "No medications found."
 
             formatted = []
@@ -85,6 +94,7 @@ Answer:"""
                     med_line += f", Notes: {med['notes']}"
                 formatted.append(med_line)
 
+            logger.debug("Formatted %d user medications for prompt", len(formatted))
             return "\n".join(formatted)
 
         rag_chain = (
@@ -105,6 +115,7 @@ Answer:"""
 
     def add_medication_to_knowledge_base(self, medication_name: str):
         """Add medication to vector store with source metadata for audit trail"""
+        logger.info("Indexing medication into knowledge base: %s", medication_name)
         drug_info = self.knowledge_base.search_drug(medication_name)
 
         if drug_info['success']:
@@ -122,15 +133,21 @@ Answer:"""
                     "indexed_at": str(__import__('datetime').datetime.now())
                 }]
             )
+            logger.debug("Indexed %s with RxNorm metadata", medication_name)
             return True
         else:
+            logger.warning("Could not index %s: %s", medication_name, drug_info.get('error'))
             return False
 
     def ask_question(self, question: str) -> str:
-        return self.rag_chain.invoke(question)
+        logger.debug("RAG question received (%d chars)", len(question))
+        answer = self.rag_chain.invoke(question)
+        logger.debug("RAG answer generated (%d chars)", len(answer))
+        return answer
 
     def add_user_medications_to_kb(self, medications: List[Dict]):
         """Add user medications to vector store"""
+        logger.info("Adding %d user medications to knowledge base", len(medications))
         for med in medications:
             med_name = med.get('name')
             if med_name:
@@ -165,6 +182,9 @@ Answer:"""
 
     def ask_question_with_debug(self, question: str, use_mmr: bool = True) -> str:
         """Ask a question and return the answer, switching retriever strategy if needed."""
+        strategy = "mmr" if use_mmr else "similarity"
+        logger.debug("ask_question_with_debug: strategy=%s, question=%s", strategy, question[:80])
+
         if use_mmr:
             self.retriever = self.retriever_mmr
         else:
