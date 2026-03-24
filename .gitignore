@@ -32,3 +32,12 @@ audit_log_*.json
 
 # Root-level init (not needed for a non-package project root)
 /__init__.py
+
+# Internal docs (audits, session notes, changelogs)
+docs/
+
+# Scratch / exploratory files
+backend/test_rag_concepts.py
+
+# Generated security reports
+pip-audit-weekly.json
