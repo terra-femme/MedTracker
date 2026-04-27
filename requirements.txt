@@ -22,7 +22,7 @@ fastapi>=0.115.0
 
 # Uvicorn: The server that runs your FastAPI app
 # Like a waiter that serves your API to users
-uvicorn>=0.32.0
+uvicorn>=0.46.0
 
 # Pydantic: Data validation (checks that inputs are correct)
 # CRITICAL in health-tech: ensures medication data is valid!
