@@ -54,7 +54,7 @@ langchain>=0.3.0
 
 # LangChain Community: Pre-built integrations (Ollama, ChromaDB, etc.)
 # These are "plugins" that connect LangChain to different services
-langchain-community>=0.3.0
+langchain-community>=0.4.1
 
 # LangGraph: Stateful, multi-step AI workflows (NEW!)
 # This enables decision trees, loops, and safety checks
