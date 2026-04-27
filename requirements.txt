@@ -63,7 +63,7 @@ langgraph>=0.2.0
 
 # LangGraph (Advanced Chatbot Workflow)
 langgraph>=0.1.0
-langgraph-checkpoint-sqlite>=1.0.0
+langgraph-checkpoint-sqlite>=3.0.3
 
 
 # =============================================================================
