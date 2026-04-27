@@ -132,8 +132,8 @@ python-dotenv>=1.0.0
 python-jose[cryptography]>=3.3.0
 
 # bcrypt: Password hashing — used directly (passlib incompatible with bcrypt 4+)
-# chromadb requires bcrypt>=4.0.1, so passlib[bcrypt] cannot be used
-bcrypt>=4.0.1
+# chromadb requires bcrypt>=5.0.0, so passlib[bcrypt] cannot be used
+bcrypt>=5.0.0
 
 
 # =============================================================================
