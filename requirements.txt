@@ -82,7 +82,7 @@ chromadb>=0.4.0
 sentence-transformers>=2.2.0
 
 # Hugging Face Hub: Download pre-trained AI models
-huggingface-hub>=0.20.0
+huggingface-hub>=1.12.0
 
 
 # =============================================================================
