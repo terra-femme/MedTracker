@@ -101,7 +101,7 @@ python-multipart>=0.0.6
 
 # Python Dateutil: Better date/time handling
 # Important for medication schedules and reminders
-python-dateutil>=2.8.2
+python-dateutil>=2.9.0.post0
 
 
 # =============================================================================
