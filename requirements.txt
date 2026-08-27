@@ -50,7 +50,7 @@ requests>=2.32.0
 # =============================================================================
 # LangChain Core: The foundation for LLM applications
 # Think of it as the "engine" that powers AI features
-langchain>=0.3.0
+langchain>=1.2.15
 
 # LangChain Community: Pre-built integrations (Ollama, ChromaDB, etc.)
 # These are "plugins" that connect LangChain to different services
