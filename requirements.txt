@@ -42,7 +42,7 @@ sqlalchemy>=2.0.23
 # =============================================================================
 # Requests: Make HTTP calls to external APIs
 # Used for: RxNorm API, OpenFDA API
-requests>=2.32.0
+requests>=2.33.1
 
 
 # =============================================================================
